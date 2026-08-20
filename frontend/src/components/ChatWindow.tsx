@@ -4,13 +4,13 @@ import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/lib/types";
 import { MessageBubble } from "./MessageBubble";
 import { ThinkingIndicator } from "./ThinkingIndicator";
-import { BookOpen, Zap, Search, Wrench } from "lucide-react";
+import { Cloud, Shield, Network, Wrench } from "lucide-react";
 
 const EXAMPLE_PROMPTS = [
-  { icon: Search, text: "What is the main contribution of the Attention Is All You Need paper?" },
-  { icon: BookOpen, text: "Explain how BERT uses masked language modelling" },
-  { icon: Zap, text: "Summarise the key findings from the RAG paper by Lewis et al." },
-  { icon: Wrench, text: "Calculate 1024 * 768" },
+  { icon: Network, text: "How do VPC subnets, route tables, and NAT Gateways work together?" },
+  { icon: Cloud, text: "Explain Amazon S3 storage classes, versioning, and lifecycle transition rules" },
+  { icon: Shield, text: "What are the core principles of IAM policies, roles, and least-privilege evaluation?" },
+  { icon: Wrench, text: "Calculate (64 * 1024) / 8" },
 ];
 
 interface ChatWindowProps {
@@ -33,10 +33,10 @@ export function ChatWindow({ messages, isLoading, onExampleClick }: ChatWindowPr
         <div className="mb-6 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
           <span className="text-2xl font-bold text-white">R</span>
         </div>
-        <h2 className="text-xl font-semibold text-white mb-2">RAGentic</h2>
-        <p className="text-sm text-white/40 max-w-sm mb-10 leading-relaxed">
-          Ask questions about your indexed documents. I&apos;ll retrieve the most relevant
-          context and cite my sources.
+        <h2 className="text-xl font-semibold text-white mb-2">RAGentic — AWS Cloud Assistant</h2>
+        <p className="text-sm text-white/40 max-w-md mb-10 leading-relaxed">
+          Ask questions about AWS services (EC2, S3, IAM, VPC, ECS, CloudWatch, Lambda, and more).
+          Answers are strictly grounded in indexed AWS documentation and cite verified sources.
         </p>
 
         {/* Example prompts */}

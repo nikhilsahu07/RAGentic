@@ -13,16 +13,17 @@ genai.configure(api_key=settings.GEMINI_API_KEY)
 
 _DECLINE_TRIGGER = "DECLINE_OUT_OF_CORPUS"
 
-_GROUNDED_SYSTEM = f"""You are a strict, grounded research assistant. Answer the user's question \
-using ONLY the provided context chunks.
+_AWS_GROUNDED_SYSTEM = f"""You are a specialized AWS Cloud Architecture & Infrastructure Assistant. \
+Answer the user's question accurately using ONLY the provided AWS documentation context chunks.
 
 CRITICAL RULES:
-1. Cite sources inline using [N] notation matching the context chunk number.
-2. If the context does NOT contain the answer, or if the question is out-of-domain/unsupported by the context, do NOT guess, extrapolate, or hallucinate.
-3. Instead, you MUST output the exact token: {_DECLINE_TRIGGER}
-4. Never include outside knowledge when answering grounded questions."""
+1. Cite source documentation chunks inline using [N] notation matching the respective context chunk number.
+2. Ground all architecture designs, configuration parameters, IAM policies, and service behaviors strictly in the provided context.
+3. If the provided context does NOT contain the necessary details to answer the question, or if the question is unrelated to the provided AWS documentation, do NOT guess, extrapolate, or hallucinate.
+4. Instead, you MUST output the exact token: {_DECLINE_TRIGGER}
+5. Never include outside assumptions or unsupported AWS claims not present in the context."""
 
-_DIRECT_SYSTEM = """You are a helpful and concise AI assistant. Answer the user's question clearly."""
+_DIRECT_SYSTEM = """You are a helpful and concise AWS cloud engineer and AI assistant. Answer general questions clearly and concisely."""
 
 
 class GeminiLLM:
@@ -46,7 +47,7 @@ class GeminiLLM:
         return text, tokens
 
     def generate_grounded(self, query: str, chunks: list[Chunk]) -> tuple[str, int]:
-        """Generate a grounded answer citing [N] sources or output DECLINE_OUT_OF_CORPUS."""
+        """Generate a grounded answer citing [N] sources from AWS documentation chunks."""
         if not chunks:
             return _DECLINE_TRIGGER, 0
 
@@ -58,15 +59,16 @@ class GeminiLLM:
         context_block = "\n\n---\n\n".join(context_parts)
 
         user_prompt = (
-            f"Context:\n\n{context_block}\n\n"
-            f"Question: {query}\n\n"
-            f"Remember: If the context does not answer the question, reply ONLY with '{_DECLINE_TRIGGER}'."
+            f"AWS Documentation Context:\n\n{context_block}\n\n"
+            f"User Question: {query}\n\n"
+            f"Instructions: Provide a clear, technical answer citing sources as [1], [2], etc. "
+            f"If the documentation above is insufficient to answer, respond ONLY with '{_DECLINE_TRIGGER}'."
         )
-        return self.generate(_GROUNDED_SYSTEM, user_prompt)
+        return self.generate(_AWS_GROUNDED_SYSTEM, user_prompt)
 
     def classify_intent(self, query: str) -> dict:
-        """Classify query intent with JSON output."""
-        prompt = f"""Classify the user query into exactly one intent.
+        """Classify query intent with JSON output for AWS RAG."""
+        prompt = f"""Classify the user query into exactly one intent for an AWS Cloud Services assistant.
 
 Query: {query}
 
@@ -74,9 +76,9 @@ Respond ONLY with valid JSON:
 {{"intent": "<direct|retrieve|tool>", "tool_name": <null|"calculator"|"date">, "reasoning": "<short description>"}}
 
 Rules:
-- "direct"   → greetings, general knowledge, standard concepts
-- "retrieve" → queries looking for specific document content, papers, research facts, or corpus information
-- "tool"     → arithmetic calculations or requests for current date/time
+- "retrieve" → queries about AWS services (EC2, S3, ASG, IAM, CloudWatch, CloudFormation, ECR, ECS, Route 53, VPC, RDS, Lambda, Elastic IP, ELB, EBS), AWS architecture, CLI configs, pricing specs, or documentation facts
+- "direct"   → general conversational greetings, basic programming syntax, non-cloud definitions
+- "tool"     → arithmetic calculations (e.g. EC2 instance memory/cost math) or requests for current date/time
 """
         response = self._model.generate_content(
             prompt,

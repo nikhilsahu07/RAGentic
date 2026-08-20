@@ -28,26 +28,26 @@ def test_rrf_multi_list_fusion():
 
 
 def test_retriever_pipeline():
-    """Retriever combines dense and BM25 search over Milvus chunks."""
+    """Retriever combines dense and BM25 search over Milvus chunks for AWS services."""
     fake_chunks = [
         Chunk(
             id="c1",
             doc_id="d1",
-            doc_name="attention.pdf",
-            s3_key="docs/d1/attention.pdf",
+            doc_name="amazon_vpc_user_guide.pdf",
+            s3_key="docs/d1/amazon_vpc_user_guide.pdf",
             chunk_index=0,
             page_num=1,
-            chunk_text="Transformers rely on multi-head self-attention.",
+            chunk_text="Amazon Virtual Private Cloud (Amazon VPC) enables you to launch AWS resources into a virtual network.",
             rrf_score=0.03,
         ),
         Chunk(
             id="c2",
             doc_id="d1",
-            doc_name="attention.pdf",
-            s3_key="docs/d1/attention.pdf",
+            doc_name="amazon_vpc_user_guide.pdf",
+            s3_key="docs/d1/amazon_vpc_user_guide.pdf",
             chunk_index=1,
             page_num=2,
-            chunk_text="Positional encoding is added to embeddings.",
+            chunk_text="A subnet is a range of IP addresses in your VPC. Subnets can be public or private.",
             rrf_score=0.015,
         ),
     ]
@@ -58,13 +58,13 @@ def test_retriever_pipeline():
         mock_emb.embed_query.return_value = [0.05] * 3072
         mock_store.search_dense.return_value = [("c1", 0.95), ("c2", 0.80)]
         mock_store.fetch_all_chunks.return_value = [
-            {"id": "c1", "chunk_text": "Transformers rely on multi-head self-attention."},
-            {"id": "c2", "chunk_text": "Positional encoding is added to embeddings."},
+            {"id": "c1", "chunk_text": "Amazon Virtual Private Cloud (Amazon VPC) enables you to launch AWS resources."},
+            {"id": "c2", "chunk_text": "A subnet is a range of IP addresses in your VPC."},
         ]
         mock_store.fetch_chunks_by_ids.return_value = fake_chunks
 
         from app.rag.retriever import retrieve
-        results = retrieve("attention mechanism", top_n=5)
+        results = retrieve("how do VPC subnets work", top_n=5)
 
     assert len(results) > 0
-    assert results[0].doc_name == "attention.pdf"
+    assert results[0].doc_name == "amazon_vpc_user_guide.pdf"

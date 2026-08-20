@@ -12,7 +12,7 @@ log = get_logger(__name__)
 class S3Client:
     """Thin boto3 wrapper that works with both real AWS S3 and local MinIO.
 
-    Set S3_ENDPOINT_URL=http://minio:9000 for MinIO; leave None for real AWS.
+    Set S3_ENDPOINT_URL=http://localhost:9000 for MinIO; leave None for real AWS.
     """
 
     def __init__(self) -> None:
@@ -33,7 +33,7 @@ class S3Client:
         try:
             self._client.head_bucket(Bucket=self._bucket)
         except ClientError as exc:
-            error_code = exc.response["Error"]["Code"]
+            error_code = exc.response.get("Error", {}).get("Code")
             if error_code in ("404", "NoSuchBucket"):
                 try:
                     if settings.AWS_REGION == "us-east-1" or settings.S3_ENDPOINT_URL:
@@ -44,10 +44,12 @@ class S3Client:
                             CreateBucketConfiguration={"LocationConstraint": settings.AWS_REGION},
                         )
                     log.info("s3_bucket_created", bucket=self._bucket)
-                except ClientError as create_exc:
-                    log.error("s3_bucket_create_failed", error=str(create_exc))
+                except Exception as create_exc:
+                    log.warning("s3_bucket_create_deferred", error=str(create_exc))
             else:
-                log.error("s3_head_bucket_failed", error=str(exc))
+                log.warning("s3_head_bucket_deferred", error=str(exc))
+        except Exception as exc:
+            log.warning("s3_connection_deferred", error=str(exc))
 
     def upload_file(self, local_path: str, s3_key: str) -> None:
         """Upload a local file to S3 under the given key."""

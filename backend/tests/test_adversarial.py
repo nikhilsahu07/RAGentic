@@ -2,8 +2,9 @@ from __future__ import annotations
 
 """Adversarial tests — Subtask 3.
 
-Demonstrates that out-of-corpus queries and questions where retrieved context
-does not support the answer are explicitly declined rather than hallucinated.
+Demonstrates that out-of-corpus queries, poison pill intrusions, and questions where
+retrieved AWS documentation context does not support the answer are explicitly declined
+rather than hallucinated.
 """
 
 from unittest.mock import patch
@@ -15,15 +16,19 @@ from app.rag.store import Chunk
 _ADVERSARIAL_CASES = [
     (
         "What is the boiling point of liquid nitrogen on Mars?",
-        "Astrophysics/planetary data not present in ML documents",
+        "Astrophysics data completely absent from AWS Cloud Documentation",
     ),
     (
         "Explain high-frequency algorithmic arbitrage trading strategies for crypto assets",
-        "Cryptocurrency financial trading outside domain",
+        "Cryptocurrency trading strategies outside AWS cloud domain",
     ),
     (
-        "What did Satya Nadella say in the 2024 leaked memo regarding AI acquisitions?",
-        "Specific non-existent or unindexed memo",
+        "How many cups of flour and teaspoons of vanilla extract are needed for chocolate chip cookies?",
+        "Poison pill cooking recipe query tested against AWS infrastructure corpus",
+    ),
+    (
+        "How does the AWS Quantum Teleportation service interface with VPC Subnets?",
+        "Hallucination probe asking about non-existent AWS services",
     ),
 ]
 
@@ -31,19 +36,19 @@ _ADVERSARIAL_CASES = [
 @pytest.mark.parametrize("query,rationale", _ADVERSARIAL_CASES)
 def test_adversarial_query_declined_when_context_unrelated(query: str, rationale: str):
     """When retrieved context is unrelated or empty, agent declines rather than hallucinating."""
-    irrelevant_chunk = Chunk(
+    aws_ec2_chunk = Chunk(
         id="c1",
         doc_id="d1",
-        doc_name="attention_is_all_you_need.pdf",
-        s3_key="docs/d1/attention_is_all_you_need.pdf",
+        doc_name="amazon_ec2_user_guide.pdf",
+        s3_key="docs/d1/amazon_ec2_user_guide.pdf",
         chunk_index=0,
         page_num=1,
-        chunk_text="The dominant sequence transduction models are based on complex recurrent or convolutional neural networks.",
+        chunk_text="Amazon Elastic Compute Cloud (Amazon EC2) provides scalable computing capacity in the AWS Cloud.",
         rrf_score=0.015,
     )
 
     with patch("app.agent.state_machine.classify_intent", return_value=("retrieve", None)), \
-         patch("app.agent.state_machine.retrieve", return_value=[irrelevant_chunk]), \
+         patch("app.agent.state_machine.retrieve", return_value=[aws_ec2_chunk]), \
          patch("app.agent.state_machine.llm") as mock_llm:
 
         # LLM adheres to strict prompt and emits decline trigger

@@ -47,7 +47,7 @@ export function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask something about your documents… (Ctrl+Enter to send)"
+            placeholder="Ask about AWS services, VPC, EC2, IAM, S3, ECS, Lambda... (Ctrl+Enter to send)"
             rows={1}
             disabled={isLoading || disabled}
             className="flex-1 resize-none bg-transparent text-sm text-white placeholder-white/25 focus:outline-none leading-relaxed disabled:opacity-50"
@@ -66,7 +66,7 @@ export function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
           </button>
         </div>
         <p className="mt-2 text-center text-[10px] text-white/20">
-          Ctrl+Enter to send · Answers cite retrieved document chunks
+          Ctrl+Enter to send · Answers cite retrieved AWS document chunks
         </p>
       </div>
     </div>

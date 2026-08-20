@@ -17,8 +17,8 @@ log = get_logger(__name__)
 State = Literal["ROUTING", "DIRECT", "RETRIEVE", "TOOL_CALL", "DECLINED", "DONE"]
 
 _DECLINE_MESSAGE = (
-    "I don't have reliable information about this topic in my knowledge base. "
-    "Please ask questions related to the indexed documents."
+    "I don't have reliable information about this in the indexed AWS documentation and knowledge base. "
+    "Please ask questions related to the indexed AWS services and architecture documents."
 )
 
 
@@ -68,7 +68,7 @@ def run(query: str, query_id: str | None = None) -> AgentResult:
 
             case "DIRECT":
                 answer, token_count = llm.generate(
-                    system="You are a helpful and concise AI assistant.",
+                    system="You are a helpful and concise AWS cloud engineer and AI assistant.",
                     user=query,
                 )
                 intent = "direct"
