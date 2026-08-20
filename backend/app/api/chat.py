@@ -18,9 +18,6 @@ log = get_logger(__name__)
 router = APIRouter(prefix="/api", tags=["chat"])
 
 # ── In-memory thread store ────────────────────────────────────────────────────
-# Production note: replace with Redis or DynamoDB for persistence + horizontal scale.
-# For this scope, a module-level dict is zero-infra and sufficient.
-
 _threads: dict[str, dict[str, Any]] = {}
 
 # ── Metrics counters (also used by /metrics endpoint) ────────────────────────
@@ -66,14 +63,18 @@ async def chat(body: ChatRequest) -> ChatResponse:
     # Run agent
     result = agent_run(query=body.message, query_id=user_msg_id[:8])
 
-    # Build citations with fresh presigned URLs
+    # Build citations with inline preview URLs
     citations: list[Citation] = []
     for i, chunk in enumerate(result.chunks, start=1):
         try:
             url = s3_client.generate_presigned_url(chunk.s3_key)
         except Exception as exc:
             log.warning("presigned_url_failed", s3_key=chunk.s3_key, error=str(exc))
-            url = ""
+            url = f"/api/documents/raw?key={chunk.s3_key}"
+
+        if not url:
+            url = f"/api/documents/raw?key={chunk.s3_key}"
+
         citations.append(
             Citation(
                 index=i,

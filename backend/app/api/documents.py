@@ -6,12 +6,15 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse, Response, StreamingResponse
 
+from app.config import settings
 from app.logger import get_logger
 from app.models.response import DocumentInfo, IngestResponse
 from app.rag.ingestor import ingest_document
 from app.rag.store import store
+from app.storage.s3 import s3_client
 
 log = get_logger(__name__)
 router = APIRouter(prefix="/api/documents", tags=["documents"])
@@ -22,18 +25,13 @@ _documents: dict[str, dict] = {}
 
 @router.post("/ingest", response_model=IngestResponse)
 async def ingest(file: UploadFile = File(...)) -> IngestResponse:
-    """Ingest a PDF document into the RAG pipeline.
-
-    Saves the upload to a temp file, runs the full ingest pipeline,
-    then cleans up. Returns the doc_id, chunk count, and S3 key.
-    """
+    """Ingest a PDF document into the RAG pipeline."""
     if file.content_type not in ("application/pdf", "application/octet-stream"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
     original_name = file.filename or f"document_{uuid.uuid4()}.pdf"
     log.info("ingest_upload_received", filename=original_name)
 
-    # Write to a temp file for langchain's PyPDFLoader
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         shutil.copyfileobj(file.file, tmp)
         tmp_path = tmp.name
@@ -56,14 +54,44 @@ async def ingest(file: UploadFile = File(...)) -> IngestResponse:
     )
 
 
+@router.get("/raw")
+async def get_raw_pdf(key: str = Query(..., description="S3 key or document filename")) -> Response:
+    """Stream PDF directly with inline content disposition for in-browser rendering."""
+    doc_filename = Path(key).name
+    local_path = Path(settings.CORPUS_DIR) / doc_filename
+
+    # 1. Serve from local corpus if present
+    if local_path.exists() and local_path.is_file():
+        return FileResponse(
+            path=str(local_path),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{doc_filename}"',
+                "Access-Control-Allow-Origin": "*",
+            },
+        )
+
+    # 2. Otherwise stream from S3 / MinIO
+    try:
+        obj = s3_client._client.get_object(Bucket=settings.S3_BUCKET, Key=key)
+        return StreamingResponse(
+            obj["Body"],
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{doc_filename}"',
+                "Access-Control-Allow-Origin": "*",
+            },
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=f"Document '{key}' could not be loaded: {exc}")
+
+
 @router.get("", response_model=list[DocumentInfo])
 async def list_documents() -> list[DocumentInfo]:
     """List all documents that have been ingested."""
     docs = []
-    # Merge in-memory tracking with Milvus source of truth
     try:
         milvus_docs = store.list_documents()
-        milvus_ids = {d["doc_id"] for d in milvus_docs}
         for d in milvus_docs:
             if d["doc_id"] not in _documents:
                 _documents[d["doc_id"]] = {

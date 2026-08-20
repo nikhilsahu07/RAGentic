@@ -52,25 +52,42 @@ class S3Client:
             log.warning("s3_connection_deferred", error=str(exc))
 
     def upload_file(self, local_path: str, s3_key: str) -> None:
-        """Upload a local file to S3 under the given key."""
-        self._client.upload_file(Filename=local_path, Bucket=self._bucket, Key=s3_key)
+        """Upload a local file to S3 under the given key with inline PDF content type."""
+        self._client.upload_file(
+            Filename=local_path,
+            Bucket=self._bucket,
+            Key=s3_key,
+            ExtraArgs={
+                "ContentType": "application/pdf",
+                "ContentDisposition": "inline",
+            },
+        )
         log.info("s3_uploaded", key=s3_key, bucket=self._bucket)
 
     def upload_fileobj(self, fileobj, s3_key: str, content_type: str = "application/pdf") -> None:
-        """Upload a file-like object to S3."""
+        """Upload a file-like object to S3 with inline disposition."""
         self._client.upload_fileobj(
             fileobj,
             self._bucket,
             s3_key,
-            ExtraArgs={"ContentType": content_type},
+            ExtraArgs={
+                "ContentType": content_type,
+                "ContentDisposition": "inline",
+            },
         )
         log.info("s3_uploaded_fileobj", key=s3_key, bucket=self._bucket)
 
     def generate_presigned_url(self, s3_key: str, expiry: int = 3600) -> str:
-        """Generate a pre-signed GET URL valid for expiry seconds."""
+        """Generate a pre-signed GET URL that opens inline in browsers."""
+        filename = s3_key.split("/")[-1]
         url = self._client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": self._bucket, "Key": s3_key},
+            Params={
+                "Bucket": self._bucket,
+                "Key": s3_key,
+                "ResponseContentType": "application/pdf",
+                "ResponseContentDisposition": f'inline; filename="{filename}"',
+            },
             ExpiresIn=expiry,
         )
         return url
