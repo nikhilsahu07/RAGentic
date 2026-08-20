@@ -28,7 +28,7 @@ def test_rrf_multi_list_fusion():
 
 
 def test_retriever_pipeline():
-    """Retriever combines dense and BM25 search over Milvus chunks for AWS services."""
+    """Retriever combines dense and native BM25 search over Milvus chunks for AWS services."""
     fake_chunks = [
         Chunk(
             id="c1",
@@ -38,7 +38,7 @@ def test_retriever_pipeline():
             chunk_index=0,
             page_num=1,
             chunk_text="Amazon Virtual Private Cloud (Amazon VPC) enables you to launch AWS resources into a virtual network.",
-            rrf_score=0.03,
+            rrf_score=0.0327,
         ),
         Chunk(
             id="c2",
@@ -48,7 +48,7 @@ def test_retriever_pipeline():
             chunk_index=1,
             page_num=2,
             chunk_text="A subnet is a range of IP addresses in your VPC. Subnets can be public or private.",
-            rrf_score=0.015,
+            rrf_score=0.0163,
         ),
     ]
 
@@ -56,12 +56,7 @@ def test_retriever_pipeline():
          patch("app.rag.retriever.store") as mock_store:
 
         mock_emb.embed_query.return_value = [0.05] * 3072
-        mock_store.search_dense.return_value = [("c1", 0.95), ("c2", 0.80)]
-        mock_store.fetch_all_chunks.return_value = [
-            {"id": "c1", "chunk_text": "Amazon Virtual Private Cloud (Amazon VPC) enables you to launch AWS resources."},
-            {"id": "c2", "chunk_text": "A subnet is a range of IP addresses in your VPC."},
-        ]
-        mock_store.fetch_chunks_by_ids.return_value = fake_chunks
+        mock_store.hybrid_search_native.return_value = fake_chunks
 
         from app.rag.retriever import retrieve
         results = retrieve("how do VPC subnets work", top_n=5)

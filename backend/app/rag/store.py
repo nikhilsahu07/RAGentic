@@ -9,6 +9,8 @@ from pymilvus import (
     CollectionSchema,
     DataType,
     FieldSchema,
+    Function,
+    FunctionType,
     RRFRanker,
     connections,
     utility,
@@ -44,18 +46,36 @@ def _build_schema() -> CollectionSchema:
         FieldSchema(name="s3_key", dtype=DataType.VARCHAR, max_length=1024),
         FieldSchema(name="chunk_index", dtype=DataType.INT64),
         FieldSchema(name="page_num", dtype=DataType.INT64),
-        FieldSchema(name="chunk_text", dtype=DataType.VARCHAR, max_length=65535),
+        FieldSchema(
+            name="chunk_text",
+            dtype=DataType.VARCHAR,
+            max_length=65535,
+            enable_analyzer=True,
+            enable_match=True,
+        ),
+        FieldSchema(name="sparse_vector", dtype=DataType.SPARSE_FLOAT_VECTOR),
         FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=EMBEDDING_DIM),
     ]
-    return CollectionSchema(
+
+    schema = CollectionSchema(
         fields=fields,
-        description="RAGentic document chunks with dense and metadata fields",
+        description="RAGentic document chunks with dense and native BM25 sparse vectors",
         enable_dynamic_field=True,
     )
 
+    # Built-in BM25 function: automatically tokenizes chunk_text into sparse_vector on upsert
+    bm25_fn = Function(
+        name="text_bm25_fn",
+        function_type=FunctionType.BM25,
+        input_field_names=["chunk_text"],
+        output_field_names=["sparse_vector"],
+    )
+    schema.add_function(bm25_fn)
+    return schema
+
 
 class MilvusStore:
-    """Milvus client wrapper for collection management, vector upsert, and native hybrid search."""
+    """Milvus client wrapper for collection management, native BM25 sparse generation, and native hybrid search."""
 
     def __init__(self) -> None:
         self._collection: Collection | None = None
@@ -78,13 +98,24 @@ class MilvusStore:
         if not utility.has_collection(name):
             schema = _build_schema()
             self._collection = Collection(name=name, schema=schema)
-            index_params = {
+            
+            # 1. Index on dense embedding
+            dense_index_params = {
                 "metric_type": "IP",
                 "index_type": "IVF_FLAT",
                 "params": {"nlist": 128},
             }
-            self._collection.create_index(field_name="embedding", index_params=index_params)
-            log.info("milvus_collection_created", collection=name)
+            self._collection.create_index(field_name="embedding", index_params=dense_index_params)
+            
+            # 2. Native BM25 Sparse Inverted Index
+            sparse_index_params = {
+                "metric_type": "BM25",
+                "index_type": "SPARSE_INVERTED_INDEX",
+                "params": {"drop_ratio_build": 0.0},
+            }
+            self._collection.create_index(field_name="sparse_vector", index_params=sparse_index_params)
+            
+            log.info("milvus_collection_and_bm25_indexes_created", collection=name)
         else:
             self._collection = Collection(name=name)
 
@@ -93,11 +124,11 @@ class MilvusStore:
     @property
     def collection(self) -> Collection:
         if self._collection is None:
-            raise RuntimeError("MilvusStore not connected. Call connect() first.")
+            self.connect()
         return self._collection
 
     def upsert_chunks(self, chunks: list[dict[str, Any]]) -> None:
-        """Insert or update chunks."""
+        """Insert or update chunks. Milvus automatically derives sparse_vector from chunk_text."""
         if not chunks:
             return
         data: dict[str, list] = {
@@ -118,27 +149,14 @@ class MilvusStore:
         self.collection.flush()
         log.info("milvus_upsert_success", count=len(chunks))
 
-    def search_dense(self, query_vec: list[float], top_k: int) -> list[tuple[str, float]]:
-        """Return list of (chunk_id, score) sorted descending."""
-        results = self.collection.search(
-            data=[query_vec],
-            anns_field="embedding",
-            param={"metric_type": "IP", "params": {"nprobe": 16}},
-            limit=top_k,
-            output_fields=["id"],
-        )
-        if not results:
-            return []
-        hits = results[0]
-        return [(hit.entity.get("id"), hit.distance) for hit in hits]
-
     def hybrid_search_native(
         self,
+        query_text: str,
         dense_vec: list[float],
         top_k: int = 5,
         k: int = 60,
     ) -> list[Chunk]:
-        """Perform native Milvus multi-vector / hybrid search using RRFRanker(k=60)."""
+        """Perform native Milvus hybrid search (Dense embedding + Native BM25 sparse_vector) with RRFRanker(k=60)."""
         output_fields = [
             "id",
             "doc_id",
@@ -148,7 +166,7 @@ class MilvusStore:
             "page_num",
             "chunk_text",
         ]
-        
+
         dense_req = AnnSearchRequest(
             data=[dense_vec],
             anns_field="embedding",
@@ -156,12 +174,18 @@ class MilvusStore:
             limit=top_k * 2,
         )
 
-        # Milvus native RRFRanker for multi-request fusion
+        sparse_req = AnnSearchRequest(
+            data=[query_text],
+            anns_field="sparse_vector",
+            param={"metric_type": "BM25", "params": {}},
+            limit=top_k * 2,
+        )
+
         reranker = RRFRanker(k=k)
-        
+
         try:
             results = self.collection.hybrid_search(
-                reqs=[dense_req],
+                reqs=[dense_req, sparse_req],
                 rerank=reranker,
                 limit=top_k,
                 output_fields=output_fields,
@@ -185,10 +209,31 @@ class MilvusStore:
             return chunks
         except Exception as exc:
             log.warning("milvus_hybrid_search_fallback", error=str(exc))
-            # Fallback to standard dense search + ID hydration
-            dense_hits = self.search_dense(dense_vec, top_k=top_k)
-            ids = [hit[0] for hit in dense_hits]
-            return self.fetch_chunks_by_ids(ids)
+            # Fallback to standard dense search
+            search_res = self.collection.search(
+                data=[dense_vec],
+                anns_field="embedding",
+                param={"metric_type": "IP", "params": {"nprobe": 16}},
+                limit=top_k,
+                output_fields=output_fields,
+            )
+            chunks = []
+            if search_res and len(search_res) > 0:
+                for hit in search_res[0]:
+                    entity = hit.entity
+                    chunks.append(
+                        Chunk(
+                            id=entity.get("id"),
+                            doc_id=entity.get("doc_id"),
+                            doc_name=entity.get("doc_name"),
+                            s3_key=entity.get("s3_key"),
+                            chunk_index=entity.get("chunk_index"),
+                            page_num=entity.get("page_num"),
+                            chunk_text=entity.get("chunk_text"),
+                            rrf_score=hit.distance,
+                        )
+                    )
+            return chunks
 
     def fetch_chunks_by_ids(self, ids: list[str]) -> list[Chunk]:
         """Fetch full chunk records by primary key list."""
@@ -225,17 +270,6 @@ class MilvusStore:
                     )
                 )
         return chunks
-
-    def fetch_all_chunks(self) -> list[dict[str, Any]]:
-        """Fetch all chunks for text/metadata retrieval."""
-        try:
-            return self.collection.query(
-                expr="chunk_index >= 0",
-                output_fields=["id", "chunk_text", "doc_name", "s3_key", "page_num", "doc_id", "chunk_index"],
-                limit=16384,
-            )
-        except Exception:
-            return []
 
     def list_documents(self) -> list[dict[str, Any]]:
         """Return one record per unique doc_id."""
