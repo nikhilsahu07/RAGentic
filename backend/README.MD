@@ -1,17 +1,17 @@
-# 🧠 RAGentic Backend — Agentic RAG Engine & Microservice
+# RAGentic Backend — Agentic RAG Engine & Microservice
 
 The core backend service for the **RAGentic** platform, built with **FastAPI**, **Google Gemini 2.5 Flash / Embedding-001**, and **Milvus 2.6.0**.
 
 ---
 
-## 🏗️ 1. Architecture & Decision Layer
+## 1. Architecture & Decision Layer
 
 The backend is built around a deterministic **5-State Machine** (`state_machine.py`) that processes every incoming query through distinct operational stages:
 
 ```mermaid
 flowchart TD
     Query([Query: POST /api/chat]) --> Router[Router: Gemini 2.5 Flash JSON Classifier]
-    
+
     Router -->|"intent: direct"| DirectState[1. DIRECT State]
     Router -->|"intent: tool"| ToolState[2. TOOL_CALL State]
     Router -->|"intent: retrieve"| RetrieveState[3. RETRIEVE State]
@@ -26,10 +26,10 @@ flowchart TD
     MilvusHybrid --> DenseVec[Dense ANN: embedding 3072d]
     MilvusHybrid --> SparseVec[Sparse BM25: sparse_vector Inverted Index]
     DenseVec & SparseVec --> RRF[Milvus Native RRFRanker k=60]
-    
+
     RRF --> TopChunks[Top 5 Retrieved Chunks with s3_key & page_num]
     TopChunks --> StrictLLM[Grounded Evaluator: Gemini 2.5 Flash]
-    
+
     StrictLLM -->|Output: DECLINE_OUT_OF_CORPUS| DeclineState[4. DECLINED State]
     StrictLLM -->|Output: Grounded Answer| CitationBuilder[5. Citation Builder]
 
@@ -42,7 +42,7 @@ flowchart TD
 
 ---
 
-## 🧭 2. Detailed Execution Pathways
+## 2. Detailed Execution Pathways
 
 ### 1. `RETRIEVE` (AWS Cloud Documentation Hybrid RAG)
 - **When Triggered**: Query relates to AWS services (EC2, S3, VPC, IAM, ECS, CloudWatch, Lambda, RDS, Route 53, etc.) or architecture blueprints.
@@ -80,7 +80,7 @@ flowchart TD
 
 ---
 
-## 🗄️ 3. Milvus Collection Schema (`ragentic_chunks`)
+## 3. Milvus Collection Schema (`ragentic_chunks`)
 
 The collection manages both dense embeddings and native BM25 sparse vectors in a single unified schema:
 
@@ -100,7 +100,7 @@ The collection manages both dense embeddings and native BM25 sparse vectors in a
 
 ---
 
-## 🔌 4. API Endpoints
+## 4. API Endpoints
 
 ### Chat & State Machine
 - **`POST /api/chat`**: Main agent invocation endpoint.
@@ -120,7 +120,7 @@ The collection manages both dense embeddings and native BM25 sparse vectors in a
 
 ---
 
-## 🧪 5. Testing & Verification
+## 5. Testing & Verification
 
 Run the full PyTest suite:
 ```bash

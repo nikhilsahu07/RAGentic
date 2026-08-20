@@ -18,7 +18,7 @@ It implements **100% native Milvus 2.6.0 hybrid retrieval** (Dense Gemini Embedd
 ```mermaid
 flowchart TD
     subgraph ClientLayer ["1. Presentation Layer"]
-        User([ User / Browser]) <-->|Next.js 15 UI / Port 3000| UI[Chat Interface & Citation Modals]
+        User([User / Browser]) <-->|Next.js 15 UI / Port 3000| UI[Chat Interface & Citation Modals]
     end
 
     subgraph APILayer ["2. Application Gateway"]
@@ -104,16 +104,16 @@ stateDiagram-v2
 
 ## 3. Subtasks Implementation Summary (Assignment Checklist)
 
-| Subtask                           | Requirement                                                                                  | Implementation Details                                                                                                                                                                                                                               |   Status    |
-| --------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: |
-| **Subtask 1 — Hybrid RAG**        | Dense + Sparse (BM25) with Reciprocal Rank Fusion                                            | 15 AWS PDF documents indexed into Milvus 2.6.0. Dense vector (`models/gemini-embedding-001`, 3072-dim) + native `DataType.SPARSE_FLOAT_VECTOR` auto-generated via Milvus's built-in `FunctionType.BM25`. Fused natively via `RRFRanker(k=60)`.       | ✅ Complete |
-| **Subtask 2 — Agentic Layer**     | Decide per query: (a) direct, (b) retrieve, (c) tool                                         | 5-state machine (`ROUTING` $\rightarrow$ `DIRECT` / `RETRIEVE` / `TOOL_CALL` $\rightarrow$ `DECLINED` / `DONE`). Router uses `gemini-2.5-flash` with structured JSON schema. Tools include AST-safe math calculator and UTC date utility.            | ✅ Complete |
-| **Subtask 3 — Groundedness**      | Citations for every retrieved answer + explicit decline on adversarial/out-of-corpus queries | Strict system prompt enforces inline `[N]` citations referencing source chunk and page. If evidence is lacking, LLM emits `DECLINE_OUT_OF_CORPUS` triggering the `DECLINED` state. Verified with 4 adversarial tests in `tests/test_adversarial.py`. | ✅ Complete |
-| **Subtask 4 — Containers**        | Multi-stage Dockerfile with non-root runtime user                                            | `backend/Dockerfile` uses multi-stage builder + runtime with non-root `appuser` (uid 1001). `frontend/Dockerfile` uses Next.js standalone multi-stage with non-root `nextjs` (uid 1001).                                                             | ✅ Complete |
-| **Subtask 5 — IaC Skeleton**      | Terraform module for AWS (networking, compute, least-privilege IAM) + `plan` output          | Modular Terraform setup in `infra/terraform/` (`modules/networking`, `modules/compute`, `modules/iam`) targeting AWS ECS Fargate, ALB, ECR, and least-privilege IAM policies. Plan output committed in `infra/terraform/plan_output.txt`.            | ✅ Complete |
-| **Subtask 6 — CI Pipeline**       | GitHub Actions workflow: lint/test → build → image push with manual approval gate            | `.github/workflows/integration.yml` runs Python pytest + Next.js build, compiles multi-stage images, and requires manual approval gate via GitHub Environment `production` before pushing to GHCR.                                                   | ✅ Complete |
-| **Subtask 7 — Logging & Metrics** | Structured JSON logging + exposed meaningful metric                                          | `structlog` emits newline-delimited JSON logs to stdout. Live `/metrics` endpoint exposes average retrieval latency, query counts by intent, and token spend per query.                                                                              | ✅ Complete |
-| **Subtask 8 — Documentation**     | Setup steps, architecture sketch (Mermaid), and design decisions justification               | Detailed `README.md` with Mermaid diagrams, 3 key architectural design justifications, quickstart guide, and adversarial test outputs.                                                                                                               | ✅ Complete |
+| Subtask | Requirement | Implementation Details | Status |
+|---|---|---|:---:|
+| **Subtask 1 — Hybrid RAG** | Dense + Sparse (BM25) with Reciprocal Rank Fusion | 15 AWS PDF documents indexed into Milvus 2.6.0. Dense vector (`models/gemini-embedding-001`, 3072-dim) + native `DataType.SPARSE_FLOAT_VECTOR` auto-generated via Milvus's built-in `FunctionType.BM25`. Fused natively via `RRFRanker(k=60)`. | Complete |
+| **Subtask 2 — Agentic Layer** | Decide per query: (a) direct, (b) retrieve, (c) tool | 5-state machine (`ROUTING` $\rightarrow$ `DIRECT` / `RETRIEVE` / `TOOL_CALL` $\rightarrow$ `DECLINED` / `DONE`). Router uses `gemini-2.5-flash` with structured JSON schema. Tools include AST-safe math calculator and UTC date utility. | Complete |
+| **Subtask 3 — Groundedness** | Citations for every retrieved answer + explicit decline on adversarial/out-of-corpus queries | Strict system prompt enforces inline `[N]` citations referencing source chunk and page. If evidence is lacking, LLM emits `DECLINE_OUT_OF_CORPUS` triggering the `DECLINED` state. Verified with 4 adversarial tests in `tests/test_adversarial.py`. | Complete |
+| **Subtask 4 — Containers** | Multi-stage Dockerfile with non-root runtime user | `backend/Dockerfile` uses multi-stage builder + runtime with non-root `appuser` (uid 1001). `frontend/Dockerfile` uses Next.js standalone multi-stage with non-root `nextjs` (uid 1001). | Complete |
+| **Subtask 5 — IaC Skeleton** | Terraform module for AWS (networking, compute, least-privilege IAM) + `plan` output | Modular Terraform setup in `infra/terraform/` (`modules/networking`, `modules/compute`, `modules/iam`) targeting AWS ECS Fargate, ALB, ECR, and least-privilege IAM policies. Plan output committed in `infra/terraform/plan_output.txt`. | Complete |
+| **Subtask 6 — CI Pipeline** | GitHub Actions workflow: lint/test → build → image push with manual approval gate | `.github/workflows/integration.yml` runs Python pytest + Next.js build, compiles multi-stage images, and requires manual approval gate via GitHub Environment `production` before pushing to GHCR. | Complete |
+| **Subtask 7 — Logging & Metrics** | Structured JSON logging + exposed meaningful metric | `structlog` emits newline-delimited JSON logs to stdout. Live `/metrics` endpoint exposes average retrieval latency, query counts by intent, and token spend per query. | Complete |
+| **Subtask 8 — Documentation** | Setup steps, architecture sketch (Mermaid), and design decisions justification | Detailed `README.md` with Mermaid diagrams, 3 key architectural design justifications, quickstart guide, and adversarial test outputs. | Complete |
 
 ---
 
@@ -200,12 +200,12 @@ cd backend
 
 ### Sample Adversarial Test Outputs
 
-| Adversarial Query                                                   | Result       | Reason                                                                |
-| ------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------- |
-| _"What is the boiling point of liquid nitrogen on Mars?"_           | **DECLINED** | Astrophysics data absent from AWS documentation                       |
-| _"Explain high-frequency algorithmic arbitrage trading strategies"_ | **DECLINED** | Financial crypto trading outside AWS infrastructure domain            |
-| _"How many cups of flour are needed for chocolate chip cookies?"_   | **DECLINED** | Poison pill cooking recipe rejected by AWS evidence gate              |
-| _"How does AWS Quantum Teleportation interface with VPC Subnets?"_  | **DECLINED** | Hallucination probe regarding non-existent AWS service safely refused |
+| Adversarial Query | Result | Reason |
+|---|---|---|
+| *"What is the boiling point of liquid nitrogen on Mars?"* | **DECLINED** | Astrophysics data absent from AWS documentation |
+| *"Explain high-frequency algorithmic arbitrage trading strategies"* | **DECLINED** | Financial crypto trading outside AWS infrastructure domain |
+| *"How many cups of flour are needed for chocolate chip cookies?"* | **DECLINED** | Poison pill cooking recipe rejected by AWS evidence gate |
+| *"How does AWS Quantum Teleportation interface with VPC Subnets?"* | **DECLINED** | Hallucination probe regarding non-existent AWS service safely refused |
 
 ---
 

@@ -1,10 +1,10 @@
-# 🚀 RAGentic — Quick Kick-Start Guide
+# RAGentic — Quick Kick-Start Guide
 
 A step-by-step walkthrough to set up, ingest data, build, test, and run the **Agentic RAG Microservice** on your local machine.
 
 ---
 
-## 📋 1. Prerequisites
+## 1. Prerequisites
 
 Before getting started, make sure you have the following installed on your system:
 
@@ -18,7 +18,7 @@ Before getting started, make sure you have the following installed on your syste
 
 ---
 
-## ⚙️ 2. Environment Configuration
+## 2. Environment Configuration
 
 1. Navigate to the `backend/` directory:
    ```bash
@@ -60,7 +60,7 @@ Before getting started, make sure you have the following installed on your syste
 
 ---
 
-## 🐍 3. Backend Setup & Corpus Ingestion
+## 3. Backend Setup & Corpus Ingestion
 
 ### Step 3.1: Create & Activate Virtual Environment
 ```bash
@@ -109,7 +109,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
-## 💻 4. Frontend Setup & Build
+## 4. Frontend Setup & Build
 
 Open a **new terminal window** and navigate to `frontend/`:
 
@@ -138,7 +138,7 @@ Open **[http://localhost:3000](http://localhost:3000)** in your web browser.
 
 ---
 
-## 🧪 5. Testing the Application
+## 5. Testing the Application
 
 Once both frontend and backend are running, try the following test queries in the web UI at `http://localhost:3000`:
 
@@ -163,7 +163,7 @@ Once both frontend and backend are running, try the following test queries in th
 
 ---
 
-## 🐳 6. Alternative: Running with Docker Compose (Full Stack)
+## 6. Alternative: Running with Docker Compose (Full Stack)
 
 If you prefer running all services (Frontend, Backend, Milvus, MinIO, Etcd) in isolated containers with a single command:
 
@@ -174,7 +174,7 @@ docker compose -f infra/docker-compose.yml up --build
 
 ---
 
-## 📁 7. Project Directory Cheatsheet
+## 7. Project Directory Cheatsheet
 
 ```text
 RAGentic/
