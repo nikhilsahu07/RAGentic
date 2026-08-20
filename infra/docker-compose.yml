@@ -1,0 +1,119 @@
+services:
+  # Backend Microservice
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ragentic-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-your-gemini-key}
+      - EMBEDDING_MODEL=models/gemini-embedding-001
+      - LLM_MODEL=gemini-2.5-flash
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - MILVUS_COLLECTION=ragentic_chunks
+      - S3_BUCKET=ragentic-docs
+      - S3_ENDPOINT_URL=http://minio:9000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - ENV=local
+      - LOG_LEVEL=INFO
+    depends_on:
+      milvus:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - ragentic-net
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ragentic-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - ragentic-net
+
+  # Milvus Standalone (Vector Database)
+  milvus:
+    image: milvusdb/milvus:v2.4.9
+    container_name: ragentic-milvus
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus_data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 10s
+      start_period: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      - "etcd"
+      - "minio"
+    networks:
+      - ragentic-net
+
+  # Etcd (Milvus Metadata)
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: ragentic-etcd
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir=/etcd
+    networks:
+      - ragentic-net
+
+  # MinIO (S3 compatible object store)
+  minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: ragentic-minio
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ragentic-net
+
+networks:
+  ragentic-net:
+    driver: bridge
+
+volumes:
+  milvus_data:
+  etcd_data:
+  minio_data:

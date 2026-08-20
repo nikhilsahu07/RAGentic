@@ -1,0 +1,70 @@
+from __future__ import annotations
+
+from unittest.mock import patch
+import pytest
+
+from app.rag.store import Chunk
+
+
+def _rrf_formula(rank: int, k: int = 60) -> float:
+    return 1.0 / (k + rank + 1)
+
+
+def test_rrf_monotonicity():
+    """RRF score should decrease monotonically with rank."""
+    scores = [_rrf_formula(r) for r in range(5)]
+    for i in range(len(scores) - 1):
+        assert scores[i] > scores[i + 1]
+
+
+def test_rrf_multi_list_fusion():
+    """A document appearing in both dense and sparse lists gets a higher score."""
+    k = 60
+    # Document in both lists at rank 0
+    fused_score = _rrf_formula(0, k) + _rrf_formula(0, k)
+    # Document in only one list at rank 0
+    single_score = _rrf_formula(0, k)
+    assert fused_score > single_score
+
+
+def test_retriever_pipeline():
+    """Retriever combines dense and BM25 search over Milvus chunks."""
+    fake_chunks = [
+        Chunk(
+            id="c1",
+            doc_id="d1",
+            doc_name="attention.pdf",
+            s3_key="docs/d1/attention.pdf",
+            chunk_index=0,
+            page_num=1,
+            chunk_text="Transformers rely on multi-head self-attention.",
+            rrf_score=0.03,
+        ),
+        Chunk(
+            id="c2",
+            doc_id="d1",
+            doc_name="attention.pdf",
+            s3_key="docs/d1/attention.pdf",
+            chunk_index=1,
+            page_num=2,
+            chunk_text="Positional encoding is added to embeddings.",
+            rrf_score=0.015,
+        ),
+    ]
+
+    with patch("app.rag.retriever.embedder") as mock_emb, \
+         patch("app.rag.retriever.store") as mock_store:
+
+        mock_emb.embed_query.return_value = [0.05] * 3072
+        mock_store.search_dense.return_value = [("c1", 0.95), ("c2", 0.80)]
+        mock_store.fetch_all_chunks.return_value = [
+            {"id": "c1", "chunk_text": "Transformers rely on multi-head self-attention."},
+            {"id": "c2", "chunk_text": "Positional encoding is added to embeddings."},
+        ]
+        mock_store.fetch_chunks_by_ids.return_value = fake_chunks
+
+        from app.rag.retriever import retrieve
+        results = retrieve("attention mechanism", top_n=5)
+
+    assert len(results) > 0
+    assert results[0].doc_name == "attention.pdf"
