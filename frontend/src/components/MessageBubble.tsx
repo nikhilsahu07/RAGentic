@@ -4,28 +4,39 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ChatMessage } from "@/lib/types";
 import { CitationBadge } from "./CitationBadge";
-import { Bot, User, Zap, Search, Wrench, AlertTriangle } from "lucide-react";
+import { User } from "lucide-react";
 
-const INTENT_BADGES: Record<string, { label: string; Icon: any; className: string }> = {
+const INTENT_META: Record<
+  string,
+  { label: string; dotColor: string; textColor: string; borderColor: string; bgColor: string }
+> = {
   retrieve: {
-    label: "Retrieved",
-    Icon: Search,
-    className: "text-violet-400 bg-violet-500/10 border-violet-500/25",
+    label: "retrieved",
+    dotColor: "var(--teal)",
+    textColor: "var(--teal)",
+    borderColor: "var(--teal-soft-border)",
+    bgColor: "var(--teal-soft)",
   },
   direct: {
-    label: "Direct",
-    Icon: Zap,
-    className: "text-sky-400 bg-sky-500/10 border-sky-500/25",
+    label: "direct",
+    dotColor: "var(--slate)",
+    textColor: "var(--slate)",
+    borderColor: "var(--slate-soft-border)",
+    bgColor: "var(--slate-soft)",
   },
   tool: {
-    label: "Tool",
-    Icon: Wrench,
-    className: "text-amber-400 bg-amber-500/10 border-amber-500/25",
+    label: "tool used",
+    dotColor: "var(--accent)",
+    textColor: "var(--accent-text)",
+    borderColor: "var(--accent-soft-border)",
+    bgColor: "var(--accent-soft)",
   },
   declined: {
-    label: "Declined",
-    Icon: AlertTriangle,
-    className: "text-red-400 bg-red-500/10 border-red-500/25",
+    label: "declined",
+    dotColor: "var(--red)",
+    textColor: "var(--red)",
+    borderColor: "var(--red-soft-border)",
+    bgColor: "var(--red-soft)",
   },
 };
 
@@ -35,17 +46,19 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
-  const intentMeta = message.intent ? INTENT_BADGES[message.intent] : null;
+  const intentMeta = message.intent ? INTENT_META[message.intent] : null;
 
   if (isUser) {
     return (
       <div className="flex justify-end px-4 py-2">
         <div className="flex items-start gap-2.5 max-w-[75%]">
-          <div className="rounded-2xl rounded-tr-sm bg-violet-600 px-4 py-3 shadow-lg">
-            <p className="text-sm text-white leading-relaxed whitespace-pre-wrap">{message.content}</p>
+          <div className="rounded-lg rounded-tr-sm border border-[var(--border-hover)] bg-[var(--surface-raised)] px-4 py-3">
+            <p className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
+              {message.content}
+            </p>
           </div>
-          <div className="h-7 w-7 flex-shrink-0 rounded-full bg-white/10 border border-white/10 flex items-center justify-center mt-0.5">
-            <User size={13} className="text-white/70" />
+          <div className="h-7 w-7 flex-shrink-0 rounded-md border border-[var(--border-hover)] bg-[var(--surface)] flex items-center justify-center mt-0.5">
+            <User size={13} className="text-[var(--text-secondary)]" />
           </div>
         </div>
       </div>
@@ -55,20 +68,19 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div className="flex items-start gap-3 px-4 py-2">
       {/* Avatar */}
-      <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mt-0.5">
-        <Bot size={13} className="text-white" />
+      <div className="h-7 w-7 flex-shrink-0 rounded-md border border-[var(--border-hover)] bg-[var(--surface)] flex items-center justify-center mt-0.5">
+        <span className="font-mono-ui text-[10px] font-semibold text-[var(--accent-text)]">R</span>
       </div>
 
       <div className="flex-1 min-w-0 max-w-[80%]">
         {/* Message card */}
         <div
-          className={`rounded-2xl rounded-tl-sm px-4 py-3 border shadow-sm ${
-            message.intent === "declined"
-              ? "bg-red-950/30 border-red-500/20"
-              : "bg-white/5 border-white/8"
-          }`}
+          className={`rounded-lg rounded-tl-sm px-4 py-3 border ${message.intent === "declined"
+              ? "bg-[var(--red-soft)] border-[var(--red-soft-border)]"
+              : "bg-[var(--surface)] border-[var(--border)]"
+            }`}
         >
-          <div className="prose prose-invert prose-sm max-w-none text-white/85 leading-relaxed">
+          <div className="prose prose-invert prose-sm max-w-none text-[var(--text-primary)]/90 leading-relaxed">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
           </div>
         </div>
@@ -77,9 +89,17 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <div className="mt-2 flex items-start gap-2 flex-wrap">
           {intentMeta && (
             <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${intentMeta.className}`}
+              className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono-ui text-[10px] font-medium"
+              style={{
+                color: intentMeta.textColor,
+                borderColor: intentMeta.borderColor,
+                backgroundColor: intentMeta.bgColor,
+              }}
             >
-              <intentMeta.Icon size={9} />
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: intentMeta.dotColor }}
+              />
               {intentMeta.label}
             </span>
           )}

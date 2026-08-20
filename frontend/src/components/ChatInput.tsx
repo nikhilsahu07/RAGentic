@@ -38,9 +38,9 @@ export function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t border-white/5 bg-[#0d0d0f] px-4 py-4">
+    <div className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-4">
       <div className="mx-auto max-w-3xl">
-        <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 focus-within:border-violet-500/50 focus-within:bg-white/7 transition-all duration-150">
+        <div className="flex items-end gap-2 rounded-xl border border-[var(--border-hover)] bg-[var(--bg)] px-4 py-3 focus-within:border-[var(--accent)] transition-colors duration-150">
           <textarea
             ref={textareaRef}
             id="chat-input"
@@ -50,22 +50,30 @@ export function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
             placeholder="Ask about AWS services, VPC, EC2, IAM, S3, ECS, Lambda... (Ctrl+Enter to send)"
             rows={1}
             disabled={isLoading || disabled}
-            className="flex-1 resize-none bg-transparent text-sm text-white placeholder-white/25 focus:outline-none leading-relaxed disabled:opacity-50"
+            className="flex-1 resize-none bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none leading-relaxed disabled:opacity-50"
           />
           <button
             id="send-btn"
             onClick={handleSend}
             disabled={!value.trim() || isLoading || disabled}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150 active:scale-95"
+            aria-label={isLoading ? "Stop generating" : "Send message"}
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:bg-[var(--surface-raised)] disabled:cursor-not-allowed transition-colors duration-150"
           >
             {isLoading ? (
-              <Square size={12} className="text-white fill-white" />
+              <Square
+                size={11}
+                className={value.trim() ? "text-[#171310] fill-[#171310]" : "text-[var(--text-tertiary)] fill-[var(--text-tertiary)]"}
+              />
             ) : (
-              <ArrowUp size={14} className="text-white" strokeWidth={2.5} />
+              <ArrowUp
+                size={14}
+                strokeWidth={2.5}
+                className={value.trim() ? "text-[#171310]" : "text-[var(--text-tertiary)]"}
+              />
             )}
           </button>
         </div>
-        <p className="mt-2 text-center text-[10px] text-white/20">
+        <p className="mt-2 text-center text-[10px] text-[var(--text-tertiary)]">
           Ctrl+Enter to send · Answers cite retrieved AWS document chunks
         </p>
       </div>

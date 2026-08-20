@@ -2,7 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Design tokens
+   A restrained, flat palette — no gradients anywhere. The accent is a muted
+   amber/bronze (a quiet nod to AWS's own orange, since this tool lives and
+   breathes AWS docs) used sparingly against a near-black neutral scale.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0b0b0c;
+  --surface: #131315;
+  --surface-hover: #19191c;
+  --surface-raised: #1c1c1f;
+
+  --border: #232326;
+  --border-hover: #2c2c30;
+
+  --text-primary: #e9e9ec;
+  --text-secondary: #8f8f97;
+  --text-tertiary: #58585f;
+
+  --accent: #c1874a;
+  --accent-hover: #d0964f;
+  --accent-text: #e0ac6f;
+  --accent-soft: rgba(193, 135, 74, 0.12);
+  --accent-soft-border: rgba(193, 135, 74, 0.28);
+
+  --teal: #4fa98c;
+  --teal-soft: rgba(79, 169, 140, 0.12);
+  --teal-soft-border: rgba(79, 169, 140, 0.28);
+
+  --slate: #6d93b0;
+  --slate-soft: rgba(109, 147, 176, 0.12);
+  --slate-soft-border: rgba(109, 147, 176, 0.28);
+
+  --red: #c2645a;
+  --red-soft: rgba(194, 100, 90, 0.12);
+  --red-soft-border: rgba(194, 100, 90, 0.28);
+}
+
 @layer base {
+
   *,
   *::before,
   *::after {
@@ -18,47 +57,106 @@
   }
 
   body {
-    background-color: #111114;
-    color: #f0f0f5;
+    background-color: var(--bg);
+    color: var(--text-primary);
     font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background: var(--accent-soft-border);
+    color: var(--text-primary);
+  }
+
+  /* Visible keyboard focus everywhere — never suppressed */
+  :focus-visible {
+    outline: 1.5px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
   /* Thin scrollbar for dark UI */
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
   }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--border-hover);
     border-radius: 9999px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: #3a3a40;
   }
 }
 
-/* Prose overrides for markdown in dark cards */
+.font-mono-ui {
+  font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: -0.01em;
+}
+
+/* Prose overrides for markdown in message cards */
+.prose-invert {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-bold: var(--text-primary);
+  --tw-prose-links: var(--accent-text);
+}
+
 .prose-invert code {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
   font-size: 0.8em;
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 
 .prose-invert pre {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: #0e0e10;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 1rem;
 }
 
+.prose-invert pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
 .prose-invert blockquote {
-  border-left: 2px solid rgba(139, 92, 246, 0.5);
-  color: rgba(255, 255, 255, 0.6);
+  border-left: 2px solid var(--border-hover);
+  color: var(--text-secondary);
+  font-style: normal;
+}
+
+.prose-invert a {
+  text-decoration: underline;
+  text-decoration-color: var(--border-hover);
+  text-underline-offset: 2px;
+}
+
+.prose-invert a:hover {
+  text-decoration-color: var(--accent-text);
+}
+
+/* Reduced motion — respected globally */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

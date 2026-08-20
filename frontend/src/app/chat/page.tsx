@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatWindow } from "@/components/ChatWindow";
 import { ChatInput } from "@/components/ChatInput";
@@ -8,7 +8,7 @@ import { useChat } from "@/hooks/useChat";
 import { useThreads } from "@/hooks/useThreads";
 import { fetchThread } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
-import { AlertCircle, Menu, X } from "lucide-react";
+import { AlertCircle, PanelLeftClose, PanelLeft } from "lucide-react";
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -50,9 +50,14 @@ export default function ChatPage() {
   }, [reset]);
 
   const displayMessages = viewingHistory ? historyMessages : messages;
+  const activeThreadMeta = viewingHistory
+    ? threads.find((t) => t.thread_id === historyThreadId)
+    : threads.find((t) => t.thread_id === threadId);
+
+  const msgCount = viewingHistory ? historyMessages.length : messages.length;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#111114] font-sans">
+    <div className="flex h-screen overflow-hidden bg-[var(--bg)] font-sans">
       {/* Sidebar */}
       {sidebarOpen && (
         <Sidebar
@@ -66,25 +71,35 @@ export default function ChatPage() {
       {/* Main chat area */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Top bar */}
-        <header className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
+        <header className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
           <button
             id="toggle-sidebar-btn"
             onClick={() => setSidebarOpen((p) => !p)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/8 text-white/50 hover:text-white transition-colors"
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors duration-150"
           >
-            {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
+            {sidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeft size={15} />}
           </button>
-          <span className="text-sm font-medium text-white/60 truncate">
-            {viewingHistory
-              ? threads.find((t) => t.thread_id === historyThreadId)?.title ?? "Thread"
-              : threadId
-              ? "Current conversation"
-              : "New conversation"}
-          </span>
+
+          <div className="flex items-baseline gap-2 min-w-0">
+            <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+              {viewingHistory
+                ? activeThreadMeta?.title ?? "Thread"
+                : threadId
+                  ? activeThreadMeta?.title ?? "Current conversation"
+                  : "New conversation"}
+            </span>
+            {msgCount > 0 && (
+              <span className="font-mono-ui text-[10px] text-[var(--text-tertiary)] whitespace-nowrap">
+                {msgCount} msg{msgCount !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
           {viewingHistory && (
             <button
               onClick={handleNewChat}
-              className="ml-auto text-xs text-violet-400 hover:text-violet-300 transition-colors"
+              className="ml-auto text-xs text-[var(--accent-text)] hover:text-[var(--accent-hover)] transition-colors"
             >
               Back to new chat
             </button>
@@ -93,9 +108,9 @@ export default function ChatPage() {
 
         {/* Error banner */}
         {error && (
-          <div className="flex items-center gap-2 bg-red-950/50 border-b border-red-500/20 px-4 py-2.5">
-            <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
-            <span className="text-xs text-red-300">{error}</span>
+          <div className="flex items-center gap-2 bg-[var(--red-soft)] border-b border-[var(--red-soft-border)] px-4 py-2.5">
+            <AlertCircle size={14} className="text-[var(--red)] flex-shrink-0" />
+            <span className="text-xs text-[var(--red)]">{error}</span>
           </div>
         )}
 
@@ -114,10 +129,10 @@ export default function ChatPage() {
           <ChatInput onSend={handleSend} isLoading={isLoading} />
         )}
         {viewingHistory && (
-          <div className="border-t border-white/5 bg-[#0d0d0f] px-4 py-4 text-center">
+          <div className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-center">
             <button
               onClick={handleNewChat}
-              className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
+              className="text-sm text-[var(--accent-text)] hover:text-[var(--accent-hover)] transition-colors"
             >
               ← Start a new conversation
             </button>

@@ -22,11 +22,11 @@ export function CitationBadge({ citations }: CitationBadgeProps) {
             id={`citation-${c.doc_id.slice(0, 8)}-${c.index}`}
             onClick={() => setOpen(c)}
             title={`${c.doc_name} — page ${c.page_num}`}
-            className="flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 px-2.5 py-1 text-xs text-violet-300 hover:text-violet-200 transition-all duration-150 hover:border-violet-400/50"
+            className="flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] hover:border-[var(--border-hover)] px-2.5 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-150"
           >
-            <span className="font-semibold">[{c.index}]</span>
-            <span className="text-violet-400/70 truncate max-w-[140px]">{c.doc_name}</span>
-            <span className="text-violet-500/60">p.{c.page_num}</span>
+            <span className="font-mono-ui text-[10px] text-[var(--accent-text)]">[{c.index}]</span>
+            <span className="truncate max-w-[140px]">{c.doc_name}</span>
+            <span className="font-mono-ui text-[10px] text-[var(--text-tertiary)]">p.{c.page_num}</span>
           </button>
         ))}
       </div>

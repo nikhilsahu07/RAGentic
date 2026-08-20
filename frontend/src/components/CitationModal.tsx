@@ -32,15 +32,19 @@ export function CitationModal({ citation, onClose }: CitationModalProps) {
       onClick={handleOverlayClick}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
     >
-      <div className="relative flex h-[88vh] w-full max-w-5xl flex-col rounded-2xl border border-white/10 bg-[#111114] shadow-2xl overflow-hidden">
+      <div className="relative flex h-[88vh] w-full max-w-5xl flex-col rounded-xl border border-[var(--border-hover)] bg-[var(--bg)] shadow-2xl overflow-hidden">
         {/* Modal header */}
-        <div className="flex items-center gap-3 border-b border-white/8 px-6 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20 border border-violet-500/30">
-            <FileText size={15} className="text-violet-400" />
+        <div className="flex items-center gap-3 border-b border-[var(--border)] px-6 py-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border-hover)] bg-[var(--surface)]">
+            <FileText size={14} className="text-[var(--accent-text)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{citation.doc_name}</p>
-            <p className="text-xs text-white/40">Page {citation.page_num} · Source [{citation.index}]</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+              {citation.doc_name}
+            </p>
+            <p className="font-mono-ui text-[11px] text-[var(--text-tertiary)]">
+              page {citation.page_num} · source [{citation.index}]
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {citation.presigned_url && (
@@ -48,7 +52,7 @@ export function CitationModal({ citation, onClose }: CitationModalProps) {
                 href={citation.presigned_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] hover:border-[var(--border-hover)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 <ExternalLink size={12} />
                 Open
@@ -57,23 +61,26 @@ export function CitationModal({ citation, onClose }: CitationModalProps) {
             <button
               id="citation-modal-close"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+              aria-label="Close"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           </div>
         </div>
 
         {/* Retrieved chunk — the evidence */}
-        <div className="border-b border-white/8 bg-violet-950/20 px-6 py-4">
-          <p className="text-xs font-medium text-violet-400 mb-2 uppercase tracking-wider">Retrieved Context</p>
-          <blockquote className="text-sm text-white/75 leading-relaxed line-clamp-4 italic border-l-2 border-violet-500/50 pl-4">
+        <div className="border-b border-[var(--border)] bg-[var(--surface)] px-6 py-4">
+          <p className="font-mono-ui text-[10px] font-medium text-[var(--accent-text)] mb-2 uppercase tracking-wider">
+            Retrieved context
+          </p>
+          <blockquote className="text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-4 border-l-2 border-[var(--border-hover)] pl-4">
             {citation.chunk_text}
           </blockquote>
         </div>
 
         {/* PDF viewer */}
-        <div className="flex-1 bg-[#0a0a0c]">
+        <div className="flex-1 bg-[#08080a]">
           {citation.presigned_url ? (
             <iframe
               src={citation.presigned_url}
@@ -83,9 +90,11 @@ export function CitationModal({ citation, onClose }: CitationModalProps) {
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <FileText size={40} className="mx-auto text-white/15 mb-3" />
-                <p className="text-sm text-white/30">PDF preview unavailable</p>
-                <p className="text-xs text-white/20 mt-1">The document URL has expired or is unavailable</p>
+                <FileText size={36} className="mx-auto text-[var(--text-tertiary)] mb-3" />
+                <p className="text-sm text-[var(--text-secondary)]">PDF preview unavailable</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                  The document URL has expired or is unavailable
+                </p>
               </div>
             </div>
           )}
