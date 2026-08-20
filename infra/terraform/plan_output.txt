@@ -1,41 +1,57 @@
-$ terraform init
-Initializing the backend...
-Initializing modules...
-- compute in modules/compute
-- iam in modules/iam
-- networking in modules/networking
+module.iam.data.aws_iam_policy_document.ecs_trust: Reading...
+module.iam.data.aws_iam_policy_document.ecs_trust: Read complete after 0s [id=1077804475]
 
-Initializing provider plugins...
-- Finding hashicorp/aws versions matching "~> 5.0"...
-- Installing hashicorp/aws v5.64.0...
-- Installed hashicorp/aws v5.64.0 (signed by HashiCorp)
-
-Terraform has been successfully initialized!
-
-─────────────────────────────────────────────────────────────────────────────
-
-$ terraform plan -var="environment=prod" -var="aws_region=us-east-1"
-
-Terraform used the selected providers to generate the following execution plan.
-Resource actions are indicated with the following symbols:
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
   + create
 
 Terraform will perform the following actions:
 
   # aws_s3_bucket.documents will be created
   + resource "aws_s3_bucket" "documents" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
       + arn                         = (known after apply)
       + bucket                      = "ragentic-docs-prod-us-east-1"
       + bucket_domain_name          = (known after apply)
+      + bucket_prefix               = (known after apply)
+      + bucket_regional_domain_name = (known after apply)
       + force_destroy               = false
+      + hosted_zone_id              = (known after apply)
       + id                          = (known after apply)
-      + region                      = "us-east-1"
+      + object_lock_enabled         = (known after apply)
+      + policy                      = (known after apply)
+      + region                      = (known after apply)
+      + request_payer               = (known after apply)
       + tags                        = {
+          + "Name" = "ragentic-docs-prod"
+        }
+      + tags_all                    = {
           + "Environment" = "prod"
           + "ManagedBy"   = "Terraform"
           + "Name"        = "ragentic-docs-prod"
           + "Project"     = "RAGentic"
         }
+      + website_domain              = (known after apply)
+      + website_endpoint            = (known after apply)
+
+      + cors_rule (known after apply)
+
+      + grant (known after apply)
+
+      + lifecycle_rule (known after apply)
+
+      + logging (known after apply)
+
+      + object_lock_configuration (known after apply)
+
+      + replication_configuration (known after apply)
+
+      + server_side_encryption_configuration (known after apply)
+
+      + versioning (known after apply)
+
+      + website (known after apply)
     }
 
   # aws_s3_bucket_public_access_block.documents will be created
@@ -55,146 +71,965 @@ Terraform will perform the following actions:
 
       + rule {
           + apply_server_side_encryption_by_default {
-              + sse_algorithm = "AES256"
+              + sse_algorithm     = "AES256"
+                # (1 unchanged attribute hidden)
             }
         }
     }
 
-  # module.networking.aws_vpc.main will be created
-  + resource "aws_vpc" "main" {
-      + arn                            = (known after apply)
-      + cidr_block                     = "10.0.0.0/16"
-      + enable_dns_hostnames           = true
-      + enable_dns_support             = true
-      + id                             = (known after apply)
-      + tags                           = {
+  # module.compute.aws_cloudwatch_log_group.app_logs will be created
+  + resource "aws_cloudwatch_log_group" "app_logs" {
+      + arn               = (known after apply)
+      + id                = (known after apply)
+      + log_group_class   = (known after apply)
+      + name              = "/ecs/ragentic-prod"
+      + name_prefix       = (known after apply)
+      + retention_in_days = 30
+      + skip_destroy      = false
+      + tags              = {
           + "Environment" = "prod"
-          + "Name"        = "ragentic-vpc-prod"
         }
-    }
-
-  # module.networking.aws_subnet.public[0] will be created
-  + resource "aws_subnet" "public" {
-      + cidr_block                      = "10.0.1.0/24"
-      + availability_zone               = "us-east-1a"
-      + map_public_ip_on_launch         = true
-      + vpc_id                          = (known after apply)
-    }
-
-  # module.networking.aws_subnet.public[1] will be created
-  + resource "aws_subnet" "public" {
-      + cidr_block                      = "10.0.2.0/24"
-      + availability_zone               = "us-east-1b"
-      + map_public_ip_on_launch         = true
-      + vpc_id                          = (known after apply)
-    }
-
-  # module.networking.aws_subnet.private[0] will be created
-  + resource "aws_subnet" "private" {
-      + cidr_block                      = "10.0.10.0/24"
-      + availability_zone               = "us-east-1a"
-      + vpc_id                          = (known after apply)
-    }
-
-  # module.networking.aws_subnet.private[1] will be created
-  + resource "aws_subnet" "private" {
-      + cidr_block                      = "10.0.11.0/24"
-      + availability_zone               = "us-east-1b"
-      + vpc_id                          = (known after apply)
-    }
-
-  # module.networking.aws_nat_gateway.nat will be created
-  + resource "aws_nat_gateway" "nat" {
-      + allocation_id = (known after apply)
-      + subnet_id     = (known after apply)
-    }
-
-  # module.networking.aws_security_group.alb will be created
-  + resource "aws_security_group" "alb" {
-      + name        = "ragentic-alb-sg-prod"
-      + description = "Allow inbound HTTP/HTTPS from Internet"
-      + vpc_id      = (known after apply)
-    }
-
-  # module.networking.aws_security_group.ecs_tasks will be created
-  + resource "aws_security_group" "ecs_tasks" {
-      + name        = "ragentic-ecs-sg-prod"
-      + description = "Allow traffic from ALB to ECS tasks and outbound internet access"
-      + vpc_id      = (known after apply)
-    }
-
-  # module.iam.aws_iam_role.ecs_execution will be created
-  + resource "aws_iam_role" "ecs_execution" {
-      + name               = "ragentic-ecs-execution-role-prod"
-      + assume_role_policy = jsonencode({
-          Statement = [{
-            Action    = "sts:AssumeRole"
-            Effect    = "Allow"
-            Principal = { Service = "ecs-tasks.amazonaws.com" }
-          }]
-          Version   = "2012-10-17"
-        })
-    }
-
-  # module.iam.aws_iam_role.ecs_task will be created
-  + resource "aws_iam_role" "ecs_task" {
-      + name               = "ragentic-ecs-task-role-prod"
-      + assume_role_policy = jsonencode({
-          Statement = [{
-            Action    = "sts:AssumeRole"
-            Effect    = "Allow"
-            Principal = { Service = "ecs-tasks.amazonaws.com" }
-          }]
-          Version   = "2012-10-17"
-        })
-    }
-
-  # module.compute.aws_ecs_cluster.main will be created
-  + resource "aws_ecs_cluster" "main" {
-      + name = "ragentic-cluster-prod"
+      + tags_all          = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
     }
 
   # module.compute.aws_ecr_repository.backend will be created
   + resource "aws_ecr_repository" "backend" {
-      + name                 = "ragentic-backend"
+      + arn                  = (known after apply)
+      + id                   = (known after apply)
       + image_tag_mutability = "MUTABLE"
+      + name                 = "ragentic-backend"
+      + registry_id          = (known after apply)
+      + repository_url       = (known after apply)
+      + tags                 = {
+          + "Environment" = "prod"
+        }
+      + tags_all             = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+
+      + image_scanning_configuration {
+          + scan_on_push = true
+        }
     }
 
   # module.compute.aws_ecr_repository.frontend will be created
   + resource "aws_ecr_repository" "frontend" {
-      + name                 = "ragentic-frontend"
+      + arn                  = (known after apply)
+      + id                   = (known after apply)
       + image_tag_mutability = "MUTABLE"
+      + name                 = "ragentic-frontend"
+      + registry_id          = (known after apply)
+      + repository_url       = (known after apply)
+      + tags                 = {
+          + "Environment" = "prod"
+        }
+      + tags_all             = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+
+      + image_scanning_configuration {
+          + scan_on_push = true
+        }
     }
 
-  # module.compute.aws_lb.main will be created
-  + resource "aws_lb" "main" {
-      + name               = "ragentic-alb-prod"
-      + load_balancer_type = "application"
-    }
+  # module.compute.aws_ecs_cluster.main will be created
+  + resource "aws_ecs_cluster" "main" {
+      + arn      = (known after apply)
+      + id       = (known after apply)
+      + name     = "ragentic-cluster-prod"
+      + tags     = {
+          + "Environment" = "prod"
+        }
+      + tags_all = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
 
-  # module.compute.aws_ecs_task_definition.app will be created
-  + resource "aws_ecs_task_definition" "app" {
-      + family                   = "ragentic-task-prod"
-      + requires_compatibilities = ["FARGATE"]
-      + cpu                      = "1024"
-      + memory                   = "2048"
+      + setting {
+          + name  = "containerInsights"
+          + value = "enabled"
+        }
     }
 
   # module.compute.aws_ecs_service.main will be created
   + resource "aws_ecs_service" "main" {
-      + name            = "ragentic-service-prod"
-      + launch_type     = "FARGATE"
-      + desired_count   = 1
+      + availability_zone_rebalancing      = "DISABLED"
+      + cluster                            = (known after apply)
+      + deployment_maximum_percent         = 200
+      + deployment_minimum_healthy_percent = 100
+      + desired_count                      = 1
+      + enable_ecs_managed_tags            = false
+      + enable_execute_command             = false
+      + iam_role                           = (known after apply)
+      + id                                 = (known after apply)
+      + launch_type                        = "FARGATE"
+      + name                               = "ragentic-service-prod"
+      + platform_version                   = (known after apply)
+      + scheduling_strategy                = "REPLICA"
+      + tags                               = {
+          + "Environment" = "prod"
+        }
+      + tags_all                           = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+      + task_definition                    = (known after apply)
+      + triggers                           = (known after apply)
+      + wait_for_steady_state              = false
+
+      + load_balancer {
+          + container_name   = "backend"
+          + container_port   = 8000
+          + target_group_arn = (known after apply)
+            # (1 unchanged attribute hidden)
+        }
+      + load_balancer {
+          + container_name   = "frontend"
+          + container_port   = 3000
+          + target_group_arn = (known after apply)
+            # (1 unchanged attribute hidden)
+        }
+
+      + network_configuration {
+          + assign_public_ip = false
+          + security_groups  = (known after apply)
+          + subnets          = (known after apply)
+        }
     }
 
-Plan: 24 to add, 0 to change, 0 to destroy.
+  # module.compute.aws_ecs_task_definition.app will be created
+  + resource "aws_ecs_task_definition" "app" {
+      + arn                      = (known after apply)
+      + arn_without_revision     = (known after apply)
+      + container_definitions    = (known after apply)
+      + cpu                      = "1024"
+      + enable_fault_injection   = (known after apply)
+      + execution_role_arn       = (known after apply)
+      + family                   = "ragentic-task-prod"
+      + id                       = (known after apply)
+      + memory                   = "2048"
+      + network_mode             = "awsvpc"
+      + requires_compatibilities = [
+          + "FARGATE",
+        ]
+      + revision                 = (known after apply)
+      + skip_destroy             = false
+      + tags                     = {
+          + "Environment" = "prod"
+        }
+      + tags_all                 = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+      + task_role_arn            = (known after apply)
+      + track_latest             = false
+    }
+
+  # module.compute.aws_lb.main will be created
+  + resource "aws_lb" "main" {
+      + arn                                                          = (known after apply)
+      + arn_suffix                                                   = (known after apply)
+      + client_keep_alive                                            = 3600
+      + desync_mitigation_mode                                       = "defensive"
+      + dns_name                                                     = (known after apply)
+      + drop_invalid_header_fields                                   = false
+      + enable_deletion_protection                                   = false
+      + enable_http2                                                 = true
+      + enable_tls_version_and_cipher_suite_headers                  = false
+      + enable_waf_fail_open                                         = false
+      + enable_xff_client_port                                       = false
+      + enable_zonal_shift                                           = false
+      + enforce_security_group_inbound_rules_on_private_link_traffic = (known after apply)
+      + id                                                           = (known after apply)
+      + idle_timeout                                                 = 60
+      + internal                                                     = false
+      + ip_address_type                                              = (known after apply)
+      + load_balancer_type                                           = "application"
+      + name                                                         = "ragentic-alb-prod"
+      + name_prefix                                                  = (known after apply)
+      + preserve_host_header                                         = false
+      + security_groups                                              = (known after apply)
+      + subnets                                                      = (known after apply)
+      + tags                                                         = {
+          + "Environment" = "prod"
+        }
+      + tags_all                                                     = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id                                                       = (known after apply)
+      + xff_header_processing_mode                                   = "append"
+      + zone_id                                                      = (known after apply)
+
+      + subnet_mapping (known after apply)
+    }
+
+  # module.compute.aws_lb_listener.http will be created
+  + resource "aws_lb_listener" "http" {
+      + arn                                                                   = (known after apply)
+      + id                                                                    = (known after apply)
+      + load_balancer_arn                                                     = (known after apply)
+      + port                                                                  = 80
+      + protocol                                                              = "HTTP"
+      + routing_http_request_x_amzn_mtls_clientcert_header_name               = (known after apply)
+      + routing_http_request_x_amzn_mtls_clientcert_issuer_header_name        = (known after apply)
+      + routing_http_request_x_amzn_mtls_clientcert_leaf_header_name          = (known after apply)
+      + routing_http_request_x_amzn_mtls_clientcert_serial_number_header_name = (known after apply)
+      + routing_http_request_x_amzn_mtls_clientcert_subject_header_name       = (known after apply)
+      + routing_http_request_x_amzn_mtls_clientcert_validity_header_name      = (known after apply)
+      + routing_http_request_x_amzn_tls_cipher_suite_header_name              = (known after apply)
+      + routing_http_request_x_amzn_tls_version_header_name                   = (known after apply)
+      + routing_http_response_access_control_allow_credentials_header_value   = (known after apply)
+      + routing_http_response_access_control_allow_headers_header_value       = (known after apply)
+      + routing_http_response_access_control_allow_methods_header_value       = (known after apply)
+      + routing_http_response_access_control_allow_origin_header_value        = (known after apply)
+      + routing_http_response_access_control_expose_headers_header_value      = (known after apply)
+      + routing_http_response_access_control_max_age_header_value             = (known after apply)
+      + routing_http_response_content_security_policy_header_value            = (known after apply)
+      + routing_http_response_server_enabled                                  = (known after apply)
+      + routing_http_response_strict_transport_security_header_value          = (known after apply)
+      + routing_http_response_x_content_type_options_header_value             = (known after apply)
+      + routing_http_response_x_frame_options_header_value                    = (known after apply)
+      + ssl_policy                                                            = (known after apply)
+      + tags_all                                                              = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+      + tcp_idle_timeout_seconds                                              = (known after apply)
+
+      + default_action {
+          + order            = (known after apply)
+          + target_group_arn = (known after apply)
+          + type             = "forward"
+        }
+
+      + mutual_authentication (known after apply)
+    }
+
+  # module.compute.aws_lb_listener_rule.api_routing will be created
+  + resource "aws_lb_listener_rule" "api_routing" {
+      + arn          = (known after apply)
+      + id           = (known after apply)
+      + listener_arn = (known after apply)
+      + priority     = 10
+      + tags_all     = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+
+      + action {
+          + order            = (known after apply)
+          + target_group_arn = (known after apply)
+          + type             = "forward"
+        }
+
+      + condition {
+          + path_pattern {
+              + values = [
+                  + "/api/*",
+                  + "/docs",
+                  + "/health",
+                  + "/metrics",
+                  + "/openapi.json",
+                ]
+            }
+        }
+    }
+
+  # module.compute.aws_lb_target_group.backend will be created
+  + resource "aws_lb_target_group" "backend" {
+      + arn                                = (known after apply)
+      + arn_suffix                         = (known after apply)
+      + connection_termination             = (known after apply)
+      + deregistration_delay               = "300"
+      + id                                 = (known after apply)
+      + ip_address_type                    = (known after apply)
+      + lambda_multi_value_headers_enabled = false
+      + load_balancer_arns                 = (known after apply)
+      + load_balancing_algorithm_type      = (known after apply)
+      + load_balancing_anomaly_mitigation  = (known after apply)
+      + load_balancing_cross_zone_enabled  = (known after apply)
+      + name                               = "ragentic-backend-tg-prod"
+      + name_prefix                        = (known after apply)
+      + port                               = 8000
+      + preserve_client_ip                 = (known after apply)
+      + protocol                           = "HTTP"
+      + protocol_version                   = (known after apply)
+      + proxy_protocol_v2                  = false
+      + slow_start                         = 0
+      + tags                               = {
+          + "Environment" = "prod"
+        }
+      + tags_all                           = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+      + target_type                        = "ip"
+      + vpc_id                             = (known after apply)
+
+      + health_check {
+          + enabled             = true
+          + healthy_threshold   = 2
+          + interval            = 30
+          + matcher             = "200"
+          + path                = "/health"
+          + port                = "traffic-port"
+          + protocol            = "HTTP"
+          + timeout             = 5
+          + unhealthy_threshold = 3
+        }
+
+      + stickiness (known after apply)
+
+      + target_failover (known after apply)
+
+      + target_group_health (known after apply)
+
+      + target_health_state (known after apply)
+    }
+
+  # module.compute.aws_lb_target_group.frontend will be created
+  + resource "aws_lb_target_group" "frontend" {
+      + arn                                = (known after apply)
+      + arn_suffix                         = (known after apply)
+      + connection_termination             = (known after apply)
+      + deregistration_delay               = "300"
+      + id                                 = (known after apply)
+      + ip_address_type                    = (known after apply)
+      + lambda_multi_value_headers_enabled = false
+      + load_balancer_arns                 = (known after apply)
+      + load_balancing_algorithm_type      = (known after apply)
+      + load_balancing_anomaly_mitigation  = (known after apply)
+      + load_balancing_cross_zone_enabled  = (known after apply)
+      + name                               = "ragentic-frontend-tg-prod"
+      + name_prefix                        = (known after apply)
+      + port                               = 3000
+      + preserve_client_ip                 = (known after apply)
+      + protocol                           = "HTTP"
+      + protocol_version                   = (known after apply)
+      + proxy_protocol_v2                  = false
+      + slow_start                         = 0
+      + tags                               = {
+          + "Environment" = "prod"
+        }
+      + tags_all                           = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+      + target_type                        = "ip"
+      + vpc_id                             = (known after apply)
+
+      + health_check {
+          + enabled             = true
+          + healthy_threshold   = 2
+          + interval            = 30
+          + matcher             = "200-399"
+          + path                = "/"
+          + port                = "traffic-port"
+          + protocol            = "HTTP"
+          + timeout             = 5
+          + unhealthy_threshold = 3
+        }
+
+      + stickiness (known after apply)
+
+      + target_failover (known after apply)
+
+      + target_group_health (known after apply)
+
+      + target_health_state (known after apply)
+    }
+
+  # module.iam.aws_iam_policy.s3_scoped will be created
+  + resource "aws_iam_policy" "s3_scoped" {
+      + arn              = (known after apply)
+      + attachment_count = (known after apply)
+      + description      = "Least-privilege S3 access for RAG document storage"
+      + id               = (known after apply)
+      + name             = "ragentic-s3-rw-prod"
+      + name_prefix      = (known after apply)
+      + path             = "/"
+      + policy           = (known after apply)
+      + policy_id        = (known after apply)
+      + tags_all         = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+    }
+
+  # module.iam.aws_iam_policy.ssm_read will be created
+  + resource "aws_iam_policy" "ssm_read" {
+      + arn              = (known after apply)
+      + attachment_count = (known after apply)
+      + description      = "Allow ECS task execution role to fetch application secrets"
+      + id               = (known after apply)
+      + name             = "ragentic-ssm-secrets-prod"
+      + name_prefix      = (known after apply)
+      + path             = "/"
+      + policy           = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action   = [
+                          + "ssm:GetParameters",
+                          + "ssm:GetParameter",
+                        ]
+                      + Effect   = "Allow"
+                      + Resource = "arn:aws:ssm:*:*:parameter/ragentic/*"
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + policy_id        = (known after apply)
+      + tags_all         = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "RAGentic"
+        }
+    }
+
+  # module.iam.aws_iam_role.ecs_execution will be created
+  + resource "aws_iam_role" "ecs_execution" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "ecs-tasks.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "ragentic-ecs-execution-role-prod"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags                  = {
+          + "Name" = "ragentic-ecs-execution-role-prod"
+        }
+      + tags_all              = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-ecs-execution-role-prod"
+          + "Project"     = "RAGentic"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # module.iam.aws_iam_role.ecs_task will be created
+  + resource "aws_iam_role" "ecs_task" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "ecs-tasks.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "ragentic-ecs-task-role-prod"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags                  = {
+          + "Name" = "ragentic-ecs-task-role-prod"
+        }
+      + tags_all              = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-ecs-task-role-prod"
+          + "Project"     = "RAGentic"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # module.iam.aws_iam_role_policy_attachment.ecs_execution_ssm will be created
+  + resource "aws_iam_role_policy_attachment" "ecs_execution_ssm" {
+      + id         = (known after apply)
+      + policy_arn = (known after apply)
+      + role       = "ragentic-ecs-execution-role-prod"
+    }
+
+  # module.iam.aws_iam_role_policy_attachment.ecs_execution_standard will be created
+  + resource "aws_iam_role_policy_attachment" "ecs_execution_standard" {
+      + id         = (known after apply)
+      + policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      + role       = "ragentic-ecs-execution-role-prod"
+    }
+
+  # module.iam.aws_iam_role_policy_attachment.ecs_task_s3 will be created
+  + resource "aws_iam_role_policy_attachment" "ecs_task_s3" {
+      + id         = (known after apply)
+      + policy_arn = (known after apply)
+      + role       = "ragentic-ecs-task-role-prod"
+    }
+
+  # module.networking.aws_eip.nat will be created
+  + resource "aws_eip" "nat" {
+      + allocation_id        = (known after apply)
+      + arn                  = (known after apply)
+      + association_id       = (known after apply)
+      + carrier_ip           = (known after apply)
+      + customer_owned_ip    = (known after apply)
+      + domain               = "vpc"
+      + id                   = (known after apply)
+      + instance             = (known after apply)
+      + ipam_pool_id         = (known after apply)
+      + network_border_group = (known after apply)
+      + network_interface    = (known after apply)
+      + private_dns          = (known after apply)
+      + private_ip           = (known after apply)
+      + ptr_record           = (known after apply)
+      + public_dns           = (known after apply)
+      + public_ip            = (known after apply)
+      + public_ipv4_pool     = (known after apply)
+      + tags                 = {
+          + "Name" = "ragentic-nat-eip-prod"
+        }
+      + tags_all             = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-nat-eip-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc                  = (known after apply)
+    }
+
+  # module.networking.aws_internet_gateway.gw will be created
+  + resource "aws_internet_gateway" "gw" {
+      + arn      = (known after apply)
+      + id       = (known after apply)
+      + owner_id = (known after apply)
+      + tags     = {
+          + "Name" = "ragentic-igw-prod"
+        }
+      + tags_all = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-igw-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id   = (known after apply)
+    }
+
+  # module.networking.aws_nat_gateway.nat will be created
+  + resource "aws_nat_gateway" "nat" {
+      + allocation_id                      = (known after apply)
+      + association_id                     = (known after apply)
+      + connectivity_type                  = "public"
+      + id                                 = (known after apply)
+      + network_interface_id               = (known after apply)
+      + private_ip                         = (known after apply)
+      + public_ip                          = (known after apply)
+      + secondary_private_ip_address_count = (known after apply)
+      + secondary_private_ip_addresses     = (known after apply)
+      + subnet_id                          = (known after apply)
+      + tags                               = {
+          + "Name" = "ragentic-nat-prod"
+        }
+      + tags_all                           = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-nat-prod"
+          + "Project"     = "RAGentic"
+        }
+    }
+
+  # module.networking.aws_route_table.private will be created
+  + resource "aws_route_table" "private" {
+      + arn              = (known after apply)
+      + id               = (known after apply)
+      + owner_id         = (known after apply)
+      + propagating_vgws = (known after apply)
+      + route            = [
+          + {
+              + cidr_block                 = "0.0.0.0/0"
+              + nat_gateway_id             = (known after apply)
+                # (11 unchanged attributes hidden)
+            },
+        ]
+      + tags             = {
+          + "Name" = "ragentic-private-rt-prod"
+        }
+      + tags_all         = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-private-rt-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id           = (known after apply)
+    }
+
+  # module.networking.aws_route_table.public will be created
+  + resource "aws_route_table" "public" {
+      + arn              = (known after apply)
+      + id               = (known after apply)
+      + owner_id         = (known after apply)
+      + propagating_vgws = (known after apply)
+      + route            = [
+          + {
+              + cidr_block                 = "0.0.0.0/0"
+              + gateway_id                 = (known after apply)
+                # (11 unchanged attributes hidden)
+            },
+        ]
+      + tags             = {
+          + "Name" = "ragentic-public-rt-prod"
+        }
+      + tags_all         = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-public-rt-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id           = (known after apply)
+    }
+
+  # module.networking.aws_route_table_association.private[0] will be created
+  + resource "aws_route_table_association" "private" {
+      + id             = (known after apply)
+      + route_table_id = (known after apply)
+      + subnet_id      = (known after apply)
+    }
+
+  # module.networking.aws_route_table_association.private[1] will be created
+  + resource "aws_route_table_association" "private" {
+      + id             = (known after apply)
+      + route_table_id = (known after apply)
+      + subnet_id      = (known after apply)
+    }
+
+  # module.networking.aws_route_table_association.public[0] will be created
+  + resource "aws_route_table_association" "public" {
+      + id             = (known after apply)
+      + route_table_id = (known after apply)
+      + subnet_id      = (known after apply)
+    }
+
+  # module.networking.aws_route_table_association.public[1] will be created
+  + resource "aws_route_table_association" "public" {
+      + id             = (known after apply)
+      + route_table_id = (known after apply)
+      + subnet_id      = (known after apply)
+    }
+
+  # module.networking.aws_security_group.alb will be created
+  + resource "aws_security_group" "alb" {
+      + arn                    = (known after apply)
+      + description            = "Allow inbound HTTP/HTTPS from Internet"
+      + egress                 = [
+          + {
+              + cidr_blocks      = [
+                  + "0.0.0.0/0",
+                ]
+              + from_port        = 0
+              + ipv6_cidr_blocks = []
+              + prefix_list_ids  = []
+              + protocol         = "-1"
+              + security_groups  = []
+              + self             = false
+              + to_port          = 0
+                # (1 unchanged attribute hidden)
+            },
+        ]
+      + id                     = (known after apply)
+      + ingress                = [
+          + {
+              + cidr_blocks      = [
+                  + "0.0.0.0/0",
+                ]
+              + description      = "HTTP ingress"
+              + from_port        = 80
+              + ipv6_cidr_blocks = []
+              + prefix_list_ids  = []
+              + protocol         = "tcp"
+              + security_groups  = []
+              + self             = false
+              + to_port          = 80
+            },
+          + {
+              + cidr_blocks      = [
+                  + "0.0.0.0/0",
+                ]
+              + description      = "HTTPS ingress"
+              + from_port        = 443
+              + ipv6_cidr_blocks = []
+              + prefix_list_ids  = []
+              + protocol         = "tcp"
+              + security_groups  = []
+              + self             = false
+              + to_port          = 443
+            },
+        ]
+      + name                   = "ragentic-alb-sg-prod"
+      + name_prefix            = (known after apply)
+      + owner_id               = (known after apply)
+      + revoke_rules_on_delete = false
+      + tags                   = {
+          + "Name" = "ragentic-alb-sg-prod"
+        }
+      + tags_all               = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-alb-sg-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id                 = (known after apply)
+    }
+
+  # module.networking.aws_security_group.ecs_tasks will be created
+  + resource "aws_security_group" "ecs_tasks" {
+      + arn                    = (known after apply)
+      + description            = "Allow traffic from ALB to ECS tasks and outbound internet access"
+      + egress                 = [
+          + {
+              + cidr_blocks      = [
+                  + "0.0.0.0/0",
+                ]
+              + description      = "Allow all outbound (Milvus, Gemini API, S3, ECR)"
+              + from_port        = 0
+              + ipv6_cidr_blocks = []
+              + prefix_list_ids  = []
+              + protocol         = "-1"
+              + security_groups  = []
+              + self             = false
+              + to_port          = 0
+            },
+        ]
+      + id                     = (known after apply)
+      + ingress                = [
+          + {
+              + cidr_blocks      = []
+              + description      = "Inbound from ALB to backend"
+              + from_port        = 8000
+              + ipv6_cidr_blocks = []
+              + prefix_list_ids  = []
+              + protocol         = "tcp"
+              + security_groups  = (known after apply)
+              + self             = false
+              + to_port          = 8000
+            },
+          + {
+              + cidr_blocks      = []
+              + description      = "Inbound from ALB to frontend"
+              + from_port        = 3000
+              + ipv6_cidr_blocks = []
+              + prefix_list_ids  = []
+              + protocol         = "tcp"
+              + security_groups  = (known after apply)
+              + self             = false
+              + to_port          = 3000
+            },
+        ]
+      + name                   = "ragentic-ecs-sg-prod"
+      + name_prefix            = (known after apply)
+      + owner_id               = (known after apply)
+      + revoke_rules_on_delete = false
+      + tags                   = {
+          + "Name" = "ragentic-ecs-sg-prod"
+        }
+      + tags_all               = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-ecs-sg-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id                 = (known after apply)
+    }
+
+  # module.networking.aws_subnet.private[0] will be created
+  + resource "aws_subnet" "private" {
+      + arn                                            = (known after apply)
+      + assign_ipv6_address_on_creation                = false
+      + availability_zone                              = "us-east-1a"
+      + availability_zone_id                           = (known after apply)
+      + cidr_block                                     = "10.0.10.0/24"
+      + enable_dns64                                   = false
+      + enable_resource_name_dns_a_record_on_launch    = false
+      + enable_resource_name_dns_aaaa_record_on_launch = false
+      + id                                             = (known after apply)
+      + ipv6_cidr_block_association_id                 = (known after apply)
+      + ipv6_native                                    = false
+      + map_public_ip_on_launch                        = false
+      + owner_id                                       = (known after apply)
+      + private_dns_hostname_type_on_launch            = (known after apply)
+      + tags                                           = {
+          + "Name" = "ragentic-private-subnet-1-prod"
+        }
+      + tags_all                                       = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-private-subnet-1-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id                                         = (known after apply)
+    }
+
+  # module.networking.aws_subnet.private[1] will be created
+  + resource "aws_subnet" "private" {
+      + arn                                            = (known after apply)
+      + assign_ipv6_address_on_creation                = false
+      + availability_zone                              = "us-east-1b"
+      + availability_zone_id                           = (known after apply)
+      + cidr_block                                     = "10.0.11.0/24"
+      + enable_dns64                                   = false
+      + enable_resource_name_dns_a_record_on_launch    = false
+      + enable_resource_name_dns_aaaa_record_on_launch = false
+      + id                                             = (known after apply)
+      + ipv6_cidr_block_association_id                 = (known after apply)
+      + ipv6_native                                    = false
+      + map_public_ip_on_launch                        = false
+      + owner_id                                       = (known after apply)
+      + private_dns_hostname_type_on_launch            = (known after apply)
+      + tags                                           = {
+          + "Name" = "ragentic-private-subnet-2-prod"
+        }
+      + tags_all                                       = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-private-subnet-2-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id                                         = (known after apply)
+    }
+
+  # module.networking.aws_subnet.public[0] will be created
+  + resource "aws_subnet" "public" {
+      + arn                                            = (known after apply)
+      + assign_ipv6_address_on_creation                = false
+      + availability_zone                              = "us-east-1a"
+      + availability_zone_id                           = (known after apply)
+      + cidr_block                                     = "10.0.1.0/24"
+      + enable_dns64                                   = false
+      + enable_resource_name_dns_a_record_on_launch    = false
+      + enable_resource_name_dns_aaaa_record_on_launch = false
+      + id                                             = (known after apply)
+      + ipv6_cidr_block_association_id                 = (known after apply)
+      + ipv6_native                                    = false
+      + map_public_ip_on_launch                        = true
+      + owner_id                                       = (known after apply)
+      + private_dns_hostname_type_on_launch            = (known after apply)
+      + tags                                           = {
+          + "Name" = "ragentic-public-subnet-1-prod"
+        }
+      + tags_all                                       = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-public-subnet-1-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id                                         = (known after apply)
+    }
+
+  # module.networking.aws_subnet.public[1] will be created
+  + resource "aws_subnet" "public" {
+      + arn                                            = (known after apply)
+      + assign_ipv6_address_on_creation                = false
+      + availability_zone                              = "us-east-1b"
+      + availability_zone_id                           = (known after apply)
+      + cidr_block                                     = "10.0.2.0/24"
+      + enable_dns64                                   = false
+      + enable_resource_name_dns_a_record_on_launch    = false
+      + enable_resource_name_dns_aaaa_record_on_launch = false
+      + id                                             = (known after apply)
+      + ipv6_cidr_block_association_id                 = (known after apply)
+      + ipv6_native                                    = false
+      + map_public_ip_on_launch                        = true
+      + owner_id                                       = (known after apply)
+      + private_dns_hostname_type_on_launch            = (known after apply)
+      + tags                                           = {
+          + "Name" = "ragentic-public-subnet-2-prod"
+        }
+      + tags_all                                       = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-public-subnet-2-prod"
+          + "Project"     = "RAGentic"
+        }
+      + vpc_id                                         = (known after apply)
+    }
+
+  # module.networking.aws_vpc.main will be created
+  + resource "aws_vpc" "main" {
+      + arn                                  = (known after apply)
+      + cidr_block                           = "10.0.0.0/16"
+      + default_network_acl_id               = (known after apply)
+      + default_route_table_id               = (known after apply)
+      + default_security_group_id            = (known after apply)
+      + dhcp_options_id                      = (known after apply)
+      + enable_dns_hostnames                 = true
+      + enable_dns_support                   = true
+      + enable_network_address_usage_metrics = (known after apply)
+      + id                                   = (known after apply)
+      + instance_tenancy                     = "default"
+      + ipv6_association_id                  = (known after apply)
+      + ipv6_cidr_block                      = (known after apply)
+      + ipv6_cidr_block_network_border_group = (known after apply)
+      + main_route_table_id                  = (known after apply)
+      + owner_id                             = (known after apply)
+      + tags                                 = {
+          + "Environment" = "prod"
+          + "Name"        = "ragentic-vpc-prod"
+        }
+      + tags_all                             = {
+          + "Environment" = "prod"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "ragentic-vpc-prod"
+          + "Project"     = "RAGentic"
+        }
+    }
+
+Plan: 37 to add, 0 to change, 0 to destroy.
 
 Changes to Outputs:
-  + alb_endpoint              = (known after apply)
-  + backend_ecr_url           = (known after apply)
-  + ecs_cluster_name          = "ragentic-cluster-prod"
-  + frontend_ecr_url          = (known after apply)
-  + s3_bucket_name            = "ragentic-docs-prod-us-east-1"
+  + alb_endpoint     = (known after apply)
+  + backend_ecr_url  = (known after apply)
+  + ecs_cluster_name = "ragentic-cluster-prod"
+  + frontend_ecr_url = (known after apply)
+  + s3_bucket_name   = "ragentic-docs-prod-us-east-1"
 
 ─────────────────────────────────────────────────────────────────────────────
-Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
