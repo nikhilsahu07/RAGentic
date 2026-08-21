@@ -8,6 +8,9 @@ RUN npm ci --frozen-lockfile
 
 COPY . .
 
+# Ensure public directory exists even if empty in git
+RUN mkdir -p /app/public
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
@@ -24,7 +27,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
