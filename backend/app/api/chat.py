@@ -17,10 +17,10 @@ from app.storage.s3 import s3_client
 log = get_logger(__name__)
 router = APIRouter(prefix="/api", tags=["chat"])
 
-# ── In-memory thread store ────────────────────────────────────────────────────
+# In-memory thread
 _threads: dict[str, dict[str, Any]] = {}
 
-# ── Metrics counters (also used by /metrics endpoint) ────────────────────────
+# Metrics counters (also used by /metrics endpoint)
 metrics: dict[str, Any] = defaultdict(float)
 metrics["queries_total"] = 0
 metrics["retrieval_queries"] = 0
@@ -69,7 +69,8 @@ async def chat(body: ChatRequest) -> ChatResponse:
         try:
             url = s3_client.generate_presigned_url(chunk.s3_key)
         except Exception as exc:
-            log.warning("presigned_url_failed", s3_key=chunk.s3_key, error=str(exc))
+            log.warning("presigned_url_failed",
+                        s3_key=chunk.s3_key, error=str(exc))
             url = f"/api/documents/raw?key={chunk.s3_key}"
 
         if not url:

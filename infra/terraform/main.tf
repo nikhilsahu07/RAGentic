@@ -26,7 +26,7 @@ provider "aws" {
   }
 }
 
-# ── S3 Bucket for RAG Documents (Isolated) ───────────────────────────────────
+# S3 Bucket for RAG Documents (Isolated)
 resource "aws_s3_bucket" "documents" {
   bucket        = "ragentic-docs-${var.environment}-${var.aws_region}"
   force_destroy = false
@@ -55,21 +55,21 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "documents" {
   }
 }
 
-# ── 1. Networking Module (VPC, Subnets, Gateways, SGs) ──────────────────────
+# 1. Networking Module (VPC, Subnets, Gateways, SGs)
 module "networking" {
   source      = "./modules/networking"
   environment = var.environment
   vpc_cidr    = var.vpc_cidr
 }
 
-# ── 2. IAM Module (Least-Privilege Roles & Policies) ────────────────────────
+# 2. IAM Module (Least-Privilege Roles & Policies)
 module "iam" {
   source        = "./modules/iam"
   environment   = var.environment
   s3_bucket_arn = aws_s3_bucket.documents.arn
 }
 
-# ── 3. Compute Module (ECS Fargate, ALB, ECR, CloudWatch) ───────────────────
+# 3. Compute Module (ECS Fargate, ALB, ECR, CloudWatch)
 module "compute" {
   source                = "./modules/compute"
   environment           = var.environment
